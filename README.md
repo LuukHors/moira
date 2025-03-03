@@ -40,7 +40,7 @@ This will be the basic idea of this project.
 ## Personal goals
 - Learn more about Kubernetes operators.
 - Learn more about IDPs.
-- Have a project I can write some code in and 
+- Have a project I can write some code in 
 - Improve the Gitopsability (definitely not a made up word) in Kubernetes.
 - Have fun!
 
