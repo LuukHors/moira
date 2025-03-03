@@ -1,6 +1,6 @@
 # Prototype
 This is a prototype.
-It only will show how useful this project could be and I believe that in the initial version you always make and learn a lot from mistakes. Which is why this is a prototype.
+It only will show how useful this project could be and I believe that in the initial version you always make a lot of mistakes which you can learn from.
 
 # Terms
 Header to determine some terms used on this page.
