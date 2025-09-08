@@ -1,6 +1,7 @@
 ﻿using KubeOps.Operator;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Moira.Authentik;
 using Serilog;
 using Serilog.Events;
 
@@ -15,6 +16,7 @@ Log.Logger = new LoggerConfiguration()
     .CreateLogger();
 
 builder.Services
+    .AddAuthentikProvider()
     .AddKubernetesOperator()
     .RegisterComponents();
 

@@ -18,4 +18,9 @@
       <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\Moira.Authentik\Moira.Authentik.csproj" />
+      <ProjectReference Include="..\Moira.Common\Moira.Common.csproj" />
+    </ItemGroup>
+
 </Project>
