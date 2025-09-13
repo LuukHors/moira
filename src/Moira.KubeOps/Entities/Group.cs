@@ -3,7 +3,6 @@ using KubeOps.Abstractions.Entities;
 
 namespace Moira.KubeOps.Entities;
 
-
 [KubernetesEntity(Group = "moira.operator", ApiVersion = "v1alpha1", Kind = "Group")]
 public class Group : CustomKubernetesEntity<Group.GroupSpec>
 {

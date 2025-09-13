@@ -1,8 +1,10 @@
 using KubeOps.Abstractions.Controller;
 using Microsoft.Extensions.Logging;
+using Moira.Common.Exceptions;
 using Moira.Common.Models;
 using Moira.Common.Provider;
 using Moira.KubeOps.Entities;
+using Moira.KubeOps.Mappers;
 
 namespace Moira.KubeOps.Controllers;
 
@@ -15,6 +17,14 @@ public class GroupController(
         try
         {
             var provider = await providerRouter.ResolveProviderAsync(entity.Spec.ProviderRef.Name, cancellationToken);
+
+            var command = entity.ToCommand();
+
+            var result = await provider.ExecuteAsync(command);
+        }
+        catch(IdPException ex)
+        {
+            
         }
         catch (Exception ex)
         {
