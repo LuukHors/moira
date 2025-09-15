@@ -22,6 +22,8 @@ public class GroupController(
         {
             logger.LogError(ex, "Something went wrong");
         }
+        
+        
     }
 
     public Task DeletedAsync(Group entity, CancellationToken cancellationToken)

@@ -10,7 +10,8 @@ namespace Moira.KubeOps.DependencyProvider;
 public class GroupDependencyProvider(
     IKubernetesClient client,
     IDependencyProvider<Provider, IdPProvider> providerDependencyProvider,
-    ILogger<GroupDependencyProvider> logger) : IDependencyProvider<Group, IdPGroup>
+    ILogger<GroupDependencyProvider> logger
+    ) : IDependencyProvider<Group, IdPGroup>
 {
     public async Task<IdPGroup> ResolveAsync(Group entity, CancellationToken cancellationToken)
     {
@@ -19,14 +20,15 @@ public class GroupDependencyProvider(
             entity.Spec.ProviderRef.Name,
             entity.Namespace(), 
             cancellationToken);
-
+        
         if (provider is null)
         {
             logger.LogDebug("Could not get provider for group {groupName} from kubernetes api with name {providerName}", entity.Name(), entity.Spec.ProviderRef.Name);
             throw new DependencyException($"Unable to get provider with name \"{entity.Spec.ProviderRef.Name}\" in namespace \"{entity.Namespace()}\"");
         }
-
+        
         var idPProvider = await providerDependencyProvider.ResolveAsync(provider, cancellationToken);
+        
         
         logger.LogDebug("Got provider for group {groupName} from kubernetes api with name {providerName}", entity.Name(), entity.Spec.ProviderRef.Name);
         return new IdPGroup(

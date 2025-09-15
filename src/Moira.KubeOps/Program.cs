@@ -13,7 +13,8 @@ builder.Logging.ClearProviders();
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
-    .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Fatal)
+    .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Fatal)    
+    .MinimumLevel.Override("KubeOps.Operator", LogEventLevel.Fatal)
     .WriteTo.Console()
     .CreateLogger();
 
