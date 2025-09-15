@@ -1,7 +1,7 @@
-﻿namespace Moira.Authentik.Provider;
+﻿namespace Moira.Authentik.ProviderAdapters;
 
 public abstract class AbstractAuthentikProviderAdapter
 {
     private const string ProviderName = "Authentik";
-    public string Name { get; } = ProviderName;
+    public string Name => ProviderName;
 }

@@ -1,5 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
-using Moira.Authentik.Provider;
+using Moira.Authentik.ProviderAdapters;
 using Moira.Common.Models;
 using Moira.Common.Provider;
 

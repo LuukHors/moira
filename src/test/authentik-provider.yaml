@@ -1,0 +1,7 @@
+apiVersion: moira.operator/v1alpha1
+kind: Provider
+metadata:
+  namespace: default
+  name: authentik-provider
+spec:
+  type: Authentik

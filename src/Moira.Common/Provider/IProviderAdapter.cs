@@ -6,5 +6,5 @@ namespace Moira.Common.Provider;
 public interface IProviderAdapter<TEntity> where TEntity : IdPEntity
 {
     public string Name { get; }
-    public Task<IdPCommandResult> ExecuteAsync(IdPCommand<TEntity> command);
+    public Task<IdPCommandResult<TEntity>> ExecuteAsync(IdPCommand<TEntity> command);
 }

@@ -1,0 +1,8 @@
+apiVersion: moira.operator/v1alpha1
+kind: Group
+metadata:
+  name: test-group
+spec:
+  displayName: "test123"
+  memberOf:
+  - "onetwothree"
