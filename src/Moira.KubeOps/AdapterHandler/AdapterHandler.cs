@@ -1,7 +1,6 @@
 using KubeOps.Abstractions.Entities;
 using Microsoft.Extensions.Logging;
 using Moira.Common.Commands;
-using Moira.Common.Logging;
 using Moira.Common.Models;
 using Moira.Common.Provider;
 using Moira.KubeOps.DependencyProvider;
@@ -12,7 +11,7 @@ namespace Moira.KubeOps.AdapterHandler;
 public class AdapterHandler<TK8SEntity, TEntity>(
     IDependencyProvider<TK8SEntity, TEntity> dependencyProvider,
     IProviderRouter<TEntity> providerRouter,
-    IResultHandler<TEntity> resultHandler,
+    IResultHandler<TK8SEntity, TEntity> resultHandler,
     ILogger<AdapterHandler<TK8SEntity, TEntity>> logger) : IAdapterHandler<TK8SEntity> where TK8SEntity : CustomKubernetesEntity where TEntity : IdPEntity
 {
     public async Task HandleAsync(TK8SEntity entity, CancellationToken cancellationToken)
@@ -30,7 +29,7 @@ public class AdapterHandler<TK8SEntity, TEntity>(
 
             logger.LogInformation("[{commandId}][{entityType}][{entityName}] Received result from provider {providerName}, handling result..", command.Id, typeof(TEntity).Name, idPEntity.Name, provider.Name);
 
-            await resultHandler.HandleAsync(result, cancellationToken);
+            await resultHandler.HandleAsync(entity, result, cancellationToken);
         }
         catch (Exception ex)
         {

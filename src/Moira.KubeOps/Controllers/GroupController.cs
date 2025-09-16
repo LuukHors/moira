@@ -1,9 +1,6 @@
 using KubeOps.Abstractions.Controller;
 using Microsoft.Extensions.Logging;
-using Moira.Common.Exceptions;
-using Moira.Common.Models;
 using Moira.KubeOps.AdapterHandler;
-using Moira.KubeOps.DependencyProvider;
 using Moira.KubeOps.Entities;
 
 namespace Moira.KubeOps.Controllers;
@@ -22,8 +19,6 @@ public class GroupController(
         {
             logger.LogError(ex, "Something went wrong");
         }
-        
-        
     }
 
     public Task DeletedAsync(Group entity, CancellationToken cancellationToken)

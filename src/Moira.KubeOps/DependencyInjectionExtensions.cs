@@ -18,11 +18,11 @@ public static class DependencyInjectionExtensions
         services.AddScoped<IAdapterHandler<Group>, AdapterHandler<Group,IdPGroup>>();
 
         return services.Scan(scan => scan
-        .FromAssemblies(assembly)
-        .AddClasses(classes => classes.AssignableTo(typeof(IResultHandler<>)))
-        .AsImplementedInterfaces()
-        .AddClasses(c => c.AssignableTo(typeof(IDependencyProvider<,>)))
-        .AsSelfWithInterfaces()
-        .WithScopedLifetime());
+            .FromAssemblies(assembly)
+            .AddClasses(classes => classes.AssignableTo(typeof(IResultHandler<,>)))
+            .AsImplementedInterfaces()
+            .AddClasses(c => c.AssignableTo(typeof(IDependencyProvider<,>)))
+            .AsSelfWithInterfaces()
+            .WithScopedLifetime());
     }
 }
