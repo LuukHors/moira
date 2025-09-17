@@ -4,5 +4,5 @@ public record IdPGroup(
     string Namespace,
     string Name,
     IdPProvider IdPProvider,
-    string DisplayName,
-    IEnumerable<string> MemberOf) : IdPEntity(Namespace, Name, IdPProvider);
+    IdPGroupSpec Spec,
+    IdPGroupStatus Status) : IdPEntity(Namespace, Name, IdPProvider);

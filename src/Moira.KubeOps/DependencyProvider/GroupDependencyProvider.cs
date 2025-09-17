@@ -35,8 +35,8 @@ public class GroupDependencyProvider(
             entity.Namespace(),
             entity.Name(),
             idPProvider,
-            entity.Spec.DisplayName,
-            entity.Spec.MemberOf
+            new IdPGroupSpec(entity.Spec.DisplayName, entity.Spec.MemberOf),
+            new IdPGroupStatus()
         );
     }
 }

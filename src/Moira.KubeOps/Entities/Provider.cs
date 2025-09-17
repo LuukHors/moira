@@ -8,6 +8,8 @@ public class Provider : CustomKubernetesEntity<Provider.ProviderSpec, Provider.P
 {
     public class ProviderSpec
     {
+        public string BaseUrl { get; set; }
+
         public ProviderType Type { get; set; }
     }
 

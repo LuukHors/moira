@@ -9,6 +9,11 @@ public class AuthentikGroupHandler(ILogger<AuthentikGroupHandler> logger) : IAut
 {
     public Task<AuthentikGroupV3?> GetAsync(IdPCommand<IdPGroup> command)
     {
+        if(command.Entity.IdPProvider.Type.Equals("Authentik", StringComparison.InvariantCultureIgnoreCase))
+        {
+
+        }
+
         logger.LogInformation("GetAsync");
         return Task.FromResult<AuthentikGroupV3?>(null);
     }
@@ -16,7 +21,14 @@ public class AuthentikGroupHandler(ILogger<AuthentikGroupHandler> logger) : IAut
     public Task<IdPCommandResult<IdPGroup>> CreateAsync(IdPCommand<IdPGroup> command)
     {
         logger.LogInformation("CreateAsync");
-        return Task.FromResult(new IdPCommandResult<IdPGroup>(command.Id, command.Entity));
+        var idpGroup = new IdPGroup(
+            command.Entity.Namespace,
+            command.Entity.Name,
+            command.Entity.IdPProvider,
+            command.Entity.Spec,
+            new IdPGroupStatus(Guid.NewGuid().ToString()));
+
+        return Task.FromResult(new IdPCommandResult<IdPGroup>(command.Id, idpGroup));
     }
 
     public Task<IdPCommandResult<IdPGroup>> UpdateAsync(IdPCommand<IdPGroup> command)

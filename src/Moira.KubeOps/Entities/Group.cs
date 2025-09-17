@@ -15,6 +15,6 @@ public class Group : CustomKubernetesEntity<Group.GroupSpec, Group.GroupStatus>
 
     public class GroupStatus
     {
-        
+        public string GroupId { get; set; }
     }
 }
