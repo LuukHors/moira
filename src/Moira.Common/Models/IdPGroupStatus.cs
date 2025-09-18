@@ -1,3 +1,3 @@
 ﻿namespace Moira.Common.Models;
 
-public record IdPGroupStatus(string GroupId);
+public record IdPGroupStatus(string GroupId = "", string DisplayName = "");

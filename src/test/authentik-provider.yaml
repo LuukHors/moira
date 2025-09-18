@@ -5,3 +5,7 @@ metadata:
   name: authentik-provider
 spec:
   type: Authentik
+  baseUrl: https://auth.internal.sealeo.io
+  secretRef:
+    name: auth-secret
+    namespace: default

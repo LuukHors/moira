@@ -22,12 +22,16 @@ public class AdapterHandler<TK8SEntity, TEntity>(
             var provider = await providerRouter.ResolveAsync(idPEntity.IdPProvider.Type, cancellationToken);
 
             var command = new IdPCommand<TEntity>(Guid.NewGuid(), idPEntity);
-            
-            logger.LogInformation("[{commandId}][{entityType}][{entityName}] Sending command to provider {providerName}", command.Id, typeof(TEntity).Name, idPEntity.Name, provider.Name);
 
-            var result = await provider.ExecuteAsync(command);
+            logger.LogInformation(
+                "[{commandId}][{entityType}][{entityName}] Sending command to provider {providerName}", command.Id,
+                typeof(TEntity).Name, idPEntity.Name, provider.Name);
 
-            logger.LogInformation("[{commandId}][{entityType}][{entityName}] Received result from provider {providerName}, handling result..", command.Id, typeof(TEntity).Name, idPEntity.Name, provider.Name);
+            var result = await provider.ExecuteAsync(command, cancellationToken);
+
+            logger.LogInformation(
+                "[{commandId}][{entityType}][{entityName}] Received result from provider {providerName}, handling result..",
+                command.Id, typeof(TEntity).Name, idPEntity.Name, provider.Name);
 
             await resultHandler.HandleAsync(entity, result, cancellationToken);
         }

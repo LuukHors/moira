@@ -11,6 +11,8 @@ public class Provider : CustomKubernetesEntity<Provider.ProviderSpec, Provider.P
         public string BaseUrl { get; set; }
 
         public ProviderType Type { get; set; }
+        
+        public V1SecretReference SecretRef { get; set;}
     }
 
     public class ProviderStatus

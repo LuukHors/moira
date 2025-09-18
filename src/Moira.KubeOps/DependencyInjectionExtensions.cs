@@ -16,7 +16,7 @@ public static class DependencyInjectionExtensions
     {
         var assembly = Assembly.GetExecutingAssembly();
         services.AddScoped<IAdapterHandler<Group>, AdapterHandler<Group,IdPGroup>>();
-
+        services.AddHttpClient();
         return services.Scan(scan => scan
             .FromAssemblies(assembly)
             .AddClasses(classes => classes.AssignableTo(typeof(IResultHandler<,>)))

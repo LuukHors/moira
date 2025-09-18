@@ -5,7 +5,7 @@ namespace Moira.Authentik.Handlers;
 
 public interface IAuthentikHandler<TEntity, TAuthentikModel> where TEntity : IdPEntity
 {
-    Task<TAuthentikModel?> GetAsync(IdPCommand<TEntity> command);
-    Task<IdPCommandResult<TEntity>> CreateAsync(IdPCommand<TEntity> command);
-    Task<IdPCommandResult<TEntity>> UpdateAsync(IdPCommand<TEntity> command);
+    Task<TAuthentikModel?> GetAsync(IdPCommand<TEntity> command, CancellationToken cancellationToken);
+    Task<IdPCommandResult<TEntity>> CreateAsync(IdPCommand<TEntity> command, CancellationToken cancellationToken);
+    Task<IdPCommandResult<TEntity>> UpdateAsync(IdPCommand<TEntity> command, CancellationToken cancellationToken);
 }

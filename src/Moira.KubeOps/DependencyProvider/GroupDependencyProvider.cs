@@ -15,7 +15,6 @@ public class GroupDependencyProvider(
 {
     public async Task<IdPGroup> ResolveAsync(Group entity, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Getting provider for group {groupName} from kubernetes api with name {providerName}", entity.Name(), entity.Spec.ProviderRef.Name);
         var provider = await client.GetAsync<Provider>(
             entity.Spec.ProviderRef.Name,
             entity.Namespace(), 
@@ -23,14 +22,11 @@ public class GroupDependencyProvider(
         
         if (provider is null)
         {
-            logger.LogDebug("Could not get provider for group {groupName} from kubernetes api with name {providerName}", entity.Name(), entity.Spec.ProviderRef.Name);
-            throw new DependencyException($"Unable to get provider with name \"{entity.Spec.ProviderRef.Name}\" in namespace \"{entity.Namespace()}\"");
+            throw new InvalidOperationException($"Unable to get provider with name \"{entity.Spec.ProviderRef.Name}\" in namespace \"{entity.Namespace()}\"");
         }
         
         var idPProvider = await providerDependencyProvider.ResolveAsync(provider, cancellationToken);
         
-        
-        logger.LogDebug("Got provider for group {groupName} from kubernetes api with name {providerName}", entity.Name(), entity.Spec.ProviderRef.Name);
         return new IdPGroup(
             entity.Namespace(),
             entity.Name(),
