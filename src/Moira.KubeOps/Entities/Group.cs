@@ -8,9 +8,9 @@ public class Group : CustomKubernetesEntity<Group.GroupSpec, Group.GroupStatus>
 {
     public class GroupSpec
     {
-        public string DisplayName { get; set; }
+        public string DisplayName { get; set; } = string.Empty;
         public IEnumerable<string> MemberOf { get; set; } = [];
-        public ProviderRef ProviderRef { get; set; }
+        public ProviderRef ProviderRef { get; set; } = new();
     }
 
     public class GroupStatus

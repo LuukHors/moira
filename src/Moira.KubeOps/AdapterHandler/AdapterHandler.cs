@@ -1,6 +1,7 @@
 using KubeOps.Abstractions.Entities;
 using Microsoft.Extensions.Logging;
 using Moira.Common.Commands;
+using Moira.Common.Exceptions;
 using Moira.Common.Models;
 using Moira.Common.Provider;
 using Moira.KubeOps.DependencyProvider;

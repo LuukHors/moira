@@ -1,12 +1,11 @@
 using System.Reflection;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Moira.Common.Models;
 using Moira.KubeOps.AdapterHandler;
-using Moira.KubeOps.Controllers;
 using Moira.KubeOps.DependencyProvider;
 using Moira.KubeOps.Entities;
 using Moira.KubeOps.ResultHandler;
+using Moira.KubeOps.ValidatorWebhooks.Executor;
 
 namespace Moira.KubeOps;
 
@@ -21,6 +20,8 @@ public static class DependencyInjectionExtensions
             .FromAssemblies(assembly)
             .AddClasses(classes => classes.AssignableTo(typeof(IResultHandler<,>)))
             .AsImplementedInterfaces()
+            .AddClasses(classes => classes.AssignableTo(typeof(IValidatorExecutor<>)))
+            .AsSelfWithInterfaces()
             .AddClasses(c => c.AssignableTo(typeof(IDependencyProvider<,>)))
             .AsSelfWithInterfaces()
             .WithScopedLifetime());
