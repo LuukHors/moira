@@ -11,15 +11,13 @@ public class ProviderDependencyProvider(
 {
     public async Task<IdPProvider> ResolveAsync(Provider entity, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(entity.Spec.SecretRef);
-        
         var secret = await client.GetAsync<V1Secret>(entity.Spec.SecretRef.Name, entity.Spec.SecretRef.NamespaceProperty, cancellationToken) 
                      ?? throw new InvalidOperationException($"Could not get secret {entity.Spec.SecretRef.NamespaceProperty}/{entity.Spec.SecretRef.Name}");
         
-        var clientIdResult = secret.Data.TryGetValue("ClientId", out var clientIdByteArray);
-        var clientSecretResult = secret.Data.TryGetValue("ClientSecret", out var clientSecretByteArray);
+        var gotClientIdFromSecret = secret.Data.TryGetValue("ClientId", out var clientIdByteArray);
+        var gotclientSecretFromSecret = secret.Data.TryGetValue("ClientSecret", out var clientSecretByteArray);
 
-        if (!clientIdResult || !clientSecretResult || clientIdByteArray is null || clientSecretByteArray is null)
+        if (!gotClientIdFromSecret || !gotclientSecretFromSecret || clientIdByteArray is null || clientSecretByteArray is null)
         {
             throw new InvalidOperationException($"Could not get key/value ClientId or ClientSecret from secret {entity.Spec.SecretRef.NamespaceProperty}/{entity.Spec.SecretRef.Name}");
         }

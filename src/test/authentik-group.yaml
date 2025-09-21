@@ -1,11 +1,29 @@
 apiVersion: moira.operator/v1alpha1
 kind: Group
 metadata:
-  name: test-group-2
+  name: moira-test2
   namespace: default
 spec:
-  displayName: "test123"
-  memberOf:
-  - "onetwothree"
+  displayName: "moira-test2"
+  providerRef:
+    name: authentik-provider
+---
+apiVersion: moira.operator/v1alpha1
+kind: Group
+metadata:
+  name: moira-test1
+  namespace: default
+spec:
+  displayName: "moira-test1"
+  providerRef:
+    name: authentik-provider
+---
+apiVersion: moira.operator/v1alpha1
+kind: Group
+metadata:
+  name: moira-test3
+  namespace: default
+spec:
+  displayName: "moira-test3"
   providerRef:
     name: authentik-provider

@@ -15,7 +15,9 @@ public class AuthentikGroupProviderAdapter(
     {
         try
         {
-            logger.LogInformation("[{commandId}][{entityType}][{entityName}] Authentik adapter", command.Id, nameof(IdPGroup), command.Entity.Name);
+            if (command.Entity.Spec.MemberOf.Count() > 1)
+                logger.LogWarning("[{commandId}][{entityType}][{entityName}] Authentik adapter does not support more than one memberOf for groups", command.Id, nameof(IdPGroup), command.Entity.Name);
+            
             var group = await handler.GetAsync(command, cancellationToken);
             
             if (group is null)
@@ -23,7 +25,7 @@ public class AuthentikGroupProviderAdapter(
                 return await handler.CreateAsync(command, cancellationToken);
             }
             
-            return await handler.UpdateAsync(command, cancellationToken);
+            return await handler.UpdateAsync(group, command, cancellationToken);
         }
         catch (Exception ex)
         {

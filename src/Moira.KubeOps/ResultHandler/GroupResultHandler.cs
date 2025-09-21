@@ -1,8 +1,7 @@
-using k8s.Models;
 using KubeOps.Abstractions.Queue;
 using KubeOps.KubernetesClient;
 using Microsoft.Extensions.Logging;
-using Moira.Common.Commands;
+using Moira.Common.Exceptions;
 using Moira.Common.Models;
 using Moira.KubeOps.Entities;
 
@@ -13,13 +12,29 @@ public class GroupResultHandler(
     EntityRequeue<Group> entityRequeue,
     ILogger<GroupResultHandler> logger) : IResultHandler<Group, IdPGroup>
 {
-    public async Task HandleAsync(Group entity, IdPCommandResult<IdPGroup> result, CancellationToken cancellationToken)
+    public Task HandleAsync(Group entity, CancellationToken cancellationToken, IdPGroup? idpEntity = null, IdPException? exception = null)
+        => idpEntity is null
+            ? HandleExceptionResult(entity, exception!, cancellationToken) 
+            : HandleSuccessResult(entity, idpEntity, cancellationToken);
+
+    private async Task HandleExceptionResult(Group entity, IdPException exception, CancellationToken cancellationToken)
+    {
+        logger.LogError(exception, "testing.");
+        entity.Status.ObservedGeneration = entity.Metadata.Generation;
+        entity.Status.Synced = false;
+
+        await client.UpdateStatusAsync(entity, cancellationToken);
+        
+        entityRequeue(entity, TimeSpan.FromSeconds(20));
+    }
+
+    private async Task HandleSuccessResult(Group entity, IdPGroup group, CancellationToken cancellationToken)
     {
         entity.Status.ObservedGeneration = entity.Metadata.Generation;
-        entity.Status.DisplayName = result.Entity.Status.DisplayName;
-        entity.Status.GroupId = result.Entity.Status.GroupId;
+        entity.Status.DisplayName = group.Status.DisplayName;
+        entity.Status.GroupId = group.Status.GroupId;
         entity.Status.ObservedGeneration = entity.Metadata.Generation;
-        entity.Status.Synced = result.Status == IdPCommandResultStatus.Success;
+        entity.Status.Synced = true;
 
         await client.UpdateStatusAsync(entity, cancellationToken);
         

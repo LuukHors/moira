@@ -13,15 +13,16 @@ builder.Logging.ClearProviders();
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
-    // .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Fatal)    
-    // .MinimumLevel.Override("KubeOps.Operator", LogEventLevel.Fatal)
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Fatal)
+    .MinimumLevel.Override("System.Net.Http", LogEventLevel.Fatal)
+    .MinimumLevel.Override("KubeOps.Operator", LogEventLevel.Fatal)
     .WriteTo.Console()
     .CreateLogger();
 
 builder.Services
+    .AddMoiraCommon()
+    .AddMoiraAuthentikProvider()
     .AddMoiraKubeOps()
-    .AddAuthentikProvider()
-    .AddCommon()
     .AddKubernetesOperator()
     .RegisterComponents();
 
