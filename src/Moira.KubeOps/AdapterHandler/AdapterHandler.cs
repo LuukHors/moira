@@ -42,6 +42,11 @@ public class AdapterHandler<TK8SEntity, TEntity>(
             var idpEx = ex.ToIdPException();
             await resultHandler.HandleAsync(entity, cancellationToken, null, idpEx);
         }
+        catch (HttpException ex)
+        {
+            var idpEx = ex.ToIdPException();
+            await resultHandler.HandleAsync(entity, cancellationToken, null, idpEx);
+        }
         catch (Exception ex)
         {
             var idpEx = ex.ToIdPException();

@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using Moira.Authentik.Authentication;
 using Moira.Authentik.Models.V3;
+using Moira.Common.Exceptions;
 using Moira.Common.Mappers;
 using Moira.Common.Models;
 
@@ -32,7 +33,7 @@ public class AuthentikGroupHttpService(
                 ? null 
                 : await response.Content.ReadFromJsonAsync<AuthentikGroupV3>(cancellationToken);
         }
-            
+        
         var multipleGroupResponse = await client.GetAsync(url.ToString(), cancellationToken);
         var groups = await multipleGroupResponse.Content.ReadFromJsonAsync<AuthentikGroupsV3>(cancellationToken);
         
@@ -52,12 +53,26 @@ public class AuthentikGroupHttpService(
             entity.Spec.DisplayName,
             entity.Status.GroupId,
             new List<AuthentikUserV3>(),
-            new Dictionary<string, object>(),
+            new Dictionary<string, string>
+            {
+                {"managed-by", "moira"}
+            },
             new List<string>(),
             ""
         );
 
         var resultRaw = await client.PutAsJsonAsync(url.ToString(), formData, cancellationToken);
+        
+        try
+        {
+            resultRaw.EnsureSuccessStatusCode();
+        }
+        catch (HttpRequestException ex)
+        {
+            var content = await resultRaw.Content.ReadAsStringAsync(cancellationToken);
+            throw new HttpException(content, resultRaw.StatusCode, "PUT", url.ToString());
+        }
+        
         var result = await resultRaw.Content.ReadFromJsonAsync<AuthentikGroupV3>(cancellationToken);
 
         if (result is null)
@@ -83,17 +98,30 @@ public class AuthentikGroupHttpService(
             entity.Spec.DisplayName,
             entity.Status.GroupId,
             new List<AuthentikUserV3>(),
-            new Dictionary<string, object>(),
+            new Dictionary<string, string>
+            {
+                {"managed-by", "moira"}
+            },
             new List<string>(),
             ""
         );
         
         var resultRaw = await client.PostAsJsonAsync(url.ToString(), formData, cancellationToken);
-        var result = await resultRaw.Content.ReadFromJsonAsync<AuthentikGroupV3>(cancellationToken);
 
+        try
+        {
+            resultRaw.EnsureSuccessStatusCode();
+        }
+        catch (HttpRequestException ex)
+        {
+            var content = await resultRaw.Content.ReadAsStringAsync(cancellationToken);
+            throw new HttpException(content, resultRaw.StatusCode, "POST", url.ToString());
+        }
+        
+        var result = await resultRaw.Content.ReadFromJsonAsync<AuthentikGroupV3>(cancellationToken);
         if (result is null)
         {
-            throw new InvalidOperationException("Failed to create group");
+            throw new HttpRequestException("Failed to create group");
         }
         
         return entity.CopyWithNewStatus(new IdPGroupStatus(
@@ -113,11 +141,11 @@ public class AuthentikGroupHttpService(
             url.Append(entity.Status.GroupId);
             
         if(!entity.Status.GroupId.Equals(string.Empty) && !isCreateAction)
-            url.Append('/');
+            url.Append("/?attributes={\"managed-by\":\"moira\"}");
 
-        if(entity.Status.GroupId.Equals(string.Empty))
+        if(entity.Status.GroupId.Equals(string.Empty) && !isCreateAction)
         {
-            url.Append("?name=").Append(entity.Spec.DisplayName);
+            url.Append("?name=").Append(entity.Spec.DisplayName).Append("&attributes={\"managed-by\":\"moira\"}");
         }
         
         return url;

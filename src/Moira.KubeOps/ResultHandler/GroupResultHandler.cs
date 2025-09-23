@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using KubeOps.Abstractions.Queue;
 using KubeOps.KubernetesClient;
 using Microsoft.Extensions.Logging;
@@ -19,13 +20,14 @@ public class GroupResultHandler(
 
     private async Task HandleExceptionResult(Group entity, IdPException exception, CancellationToken cancellationToken)
     {
-        logger.LogError(exception, "testing.");
+        logger.LogError(exception, "");
+        
         entity.Status.ObservedGeneration = entity.Metadata.Generation;
         entity.Status.Synced = false;
-
+        entity.Status.ErrorMessage = exception.Message;
         await client.UpdateStatusAsync(entity, cancellationToken);
         
-        entityRequeue(entity, TimeSpan.FromSeconds(20));
+        entityRequeue(entity, TimeSpan.FromSeconds(200));
     }
 
     private async Task HandleSuccessResult(Group entity, IdPGroup group, CancellationToken cancellationToken)
@@ -35,6 +37,7 @@ public class GroupResultHandler(
         entity.Status.GroupId = group.Status.GroupId;
         entity.Status.ObservedGeneration = entity.Metadata.Generation;
         entity.Status.Synced = true;
+        entity.Status.ErrorMessage = string.Empty;
 
         await client.UpdateStatusAsync(entity, cancellationToken);
         

@@ -13,4 +13,9 @@ public static class ExceptionMappers
     {
         return new IdPException(ex.Message, IdpExceptionType.Unknown);
     }
+
+    public static IdPException ToIdPException(this HttpException ex)
+    {
+        return new IdPException($"Http error {ex.Method} {ex.Url}({ex.StatusCode.ToString()}): {ex.Message}", IdpExceptionType.Http);
+    }
 }
