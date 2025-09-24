@@ -8,6 +8,8 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Moira.Common\Moira.Common.csproj" />
+      <PackageReference Include="Flurl" Version="4.0.0" />
+      <PackageReference Include="Flurl.Http" Version="4.0.2" />
       <PackageReference Include="Scrutor" Version="6.1.0" />
     </ItemGroup>
 
