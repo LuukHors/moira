@@ -1,6 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text;
+using System.Text.Json;
+using Flurl;
+using Flurl.Http;
 using Microsoft.Extensions.Logging;
 using Moira.Authentik.Authentication;
 using Moira.Authentik.Models.V3;
@@ -16,138 +19,149 @@ public class AuthentikGroupHttpService(
     ILogger<AuthentikGroupHttpService> logger) : IAuthentikHttpService<IdPGroup, AuthentikGroupV3>
 {
     private const string GroupEndpoint = "api/v3/core/groups";
-    public async Task<AuthentikGroupV3?> GetAsync(IdPGroup entity, CancellationToken cancellationToken)
+    private readonly Dictionary<string, object> _groupAttributes = new() {{ "managed-by", "moira" }};
+
+    public async Task<AuthentikGroupV3?> GetAsync2(string? name, string id, IdPProvider provider, CancellationToken cancellationToken, Dictionary<string, object>? attributes = null)
     {
-        var token = await tokenService.AcquireTokenAsync(entity.IdPProvider, cancellationToken);
-        
-        var url = BuildUrl(entity);
-
-        client.DefaultRequestHeaders.Clear();
-        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
-        
-        if (!entity.Status.GroupId.Equals(string.Empty))
-        {
-            var response = await client.GetAsync(url.ToString(), cancellationToken);
-
-            return response.StatusCode == HttpStatusCode.NotFound 
-                ? null 
-                : await response.Content.ReadFromJsonAsync<AuthentikGroupV3>(cancellationToken);
-        }
-        
-        var multipleGroupResponse = await client.GetAsync(url.ToString(), cancellationToken);
-        var groups = await multipleGroupResponse.Content.ReadFromJsonAsync<AuthentikGroupsV3>(cancellationToken);
-        
-        return multipleGroupResponse.StatusCode == HttpStatusCode.NotFound ? null : groups?.Results.FirstOrDefault();
-    }
-
-    public async Task<IdPGroup> UpdateAsync(IdPGroup entity, CancellationToken cancellationToken)
-    {
-        var token = await tokenService.AcquireTokenAsync(entity.IdPProvider, cancellationToken);
-        
-        var url = BuildUrl(entity);
-
-        client.DefaultRequestHeaders.Clear();
-        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
-
-        var formData = new AuthentikGroupV3(
-            entity.Spec.DisplayName,
-            entity.Status.GroupId,
-            new List<AuthentikUserV3>(),
-            new Dictionary<string, string>
-            {
-                {"managed-by", "moira"}
-            },
-            new List<string>(),
-            ""
-        );
-
-        var resultRaw = await client.PutAsJsonAsync(url.ToString(), formData, cancellationToken);
+        var baseRequest = await AcquireBaseRequest2(provider, name, attributes ?? _groupAttributes, cancellationToken);
         
         try
         {
-            resultRaw.EnsureSuccessStatusCode();
-        }
-        catch (HttpRequestException ex)
-        {
-            var content = await resultRaw.Content.ReadAsStringAsync(cancellationToken);
-            throw new HttpException(content, resultRaw.StatusCode, "PUT", url.ToString());
-        }
-        
-        var result = await resultRaw.Content.ReadFromJsonAsync<AuthentikGroupV3>(cancellationToken);
+            if (!id.Equals(string.Empty))
+            {
+                return await baseRequest
+                    .AppendPathSegments(id, '/')
+                    .GetAsync(cancellationToken: cancellationToken)
+                    .ReceiveJson<AuthentikGroupV3>();
+            }
 
-        if (result is null)
-        {
-            throw new InvalidOperationException("Failed to update group");
+            var groups = await baseRequest
+                .GetAsync(cancellationToken: cancellationToken)
+                .ReceiveJson<AuthentikGroupsV3>();
+
+            return groups.Results.FirstOrDefault();
         }
+        catch (FlurlHttpException ex)
+        {
+            if (ex.StatusCode == 404) return null;
+            var responseContent = await ex.GetResponseStringAsync();
+            throw new HttpException(responseContent, null, "GET", baseRequest.Url.ToString(), ex.StatusCode);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public async Task<AuthentikGroupV3?> GetAsync(IdPGroup entity, CancellationToken cancellationToken)
+    {
+        var baseRequest = await AcquireBaseRequest(entity, cancellationToken);
         
-        return entity.CopyWithNewStatus(new IdPGroupStatus(
-            result.pk ?? string.Empty,
-            result.name
-        ));
+        try
+        {
+            if (!entity.Status.GroupId.Equals(string.Empty))
+            {
+                return await baseRequest
+                    .AppendPathSegments(entity.Status.GroupId, '/')
+                    .GetAsync(cancellationToken: cancellationToken)
+                    .ReceiveJson<AuthentikGroupV3>();
+            }
+
+            var groups = await baseRequest
+                .GetAsync(cancellationToken: cancellationToken)
+                .ReceiveJson<AuthentikGroupsV3>();
+
+            return groups.Results.FirstOrDefault();
+        }
+        catch (FlurlHttpException ex)
+        {
+            if (ex.StatusCode == 404) return null;
+            var responseContent = await ex.GetResponseStringAsync();
+            throw new HttpException(responseContent, null, "GET", baseRequest.Url.ToString(), ex.StatusCode);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+    
+    public async Task<IdPGroup> UpdateAsync(IdPGroup entity, CancellationToken cancellationToken)
+    {
+        var baseRequest = await AcquireBaseRequest(entity, cancellationToken);
+        
+        try
+        {
+            var parentGroupName = entity.Spec.MemberOf.FirstOrDefault();
+
+            var parentGroup = await GetAsync2(parentGroupName, string.Empty, entity.IdPProvider, cancellationToken);
+            
+            var formData = new AuthentikGroupV3(entity.Spec.DisplayName,entity.Status.GroupId,[],_groupAttributes,[], parentGroup?.pk ?? string.Empty);
+
+            var result = await baseRequest
+                .AppendPathSegments(entity.Status.GroupId, '/')
+                .PutJsonAsync(formData, cancellationToken: cancellationToken)
+                .ReceiveJson<AuthentikGroupV3>();
+            
+            return entity.CopyWithNewStatus(new IdPGroupStatus(
+                result.pk ?? string.Empty,
+                result.name
+            ));
+        }
+        catch(FlurlHttpException ex)
+        {
+            var responseContent = await ex.GetResponseStringAsync();
+            throw new HttpException(responseContent, null, "PUT", baseRequest.Url.ToString(), ex.StatusCode);
+        }
     }
 
     public async Task<IdPGroup> CreateAsync(IdPGroup entity, CancellationToken cancellationToken)
     {
-        var token = await tokenService.AcquireTokenAsync(entity.IdPProvider, cancellationToken);
-        var url = BuildUrl(entity, isCreateAction: true);
+        var baseRequest = await AcquireBaseRequest(entity, cancellationToken);
         
-        client.DefaultRequestHeaders.Clear();
-        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
-        
-        var formData = new AuthentikGroupV3(
-            entity.Spec.DisplayName,
-            entity.Status.GroupId,
-            new List<AuthentikUserV3>(),
-            new Dictionary<string, string>
-            {
-                {"managed-by", "moira"}
-            },
-            new List<string>(),
-            ""
-        );
-        
-        var resultRaw = await client.PostAsJsonAsync(url.ToString(), formData, cancellationToken);
-
         try
         {
-            resultRaw.EnsureSuccessStatusCode();
+            var formData = new AuthentikGroupV3(entity.Spec.DisplayName, entity.Status.GroupId, [], _groupAttributes, [], "");
+
+            var result = await baseRequest
+                .PostJsonAsync(formData, cancellationToken: cancellationToken)
+                .ReceiveJson<AuthentikGroupV3>();
+            
+            return entity.CopyWithNewStatus(new IdPGroupStatus(
+                result.pk ?? string.Empty,
+                result.name
+            ));
         }
-        catch (HttpRequestException ex)
+        catch (FlurlHttpException ex)
         {
-            var content = await resultRaw.Content.ReadAsStringAsync(cancellationToken);
-            throw new HttpException(content, resultRaw.StatusCode, "POST", url.ToString());
+            var responseContent = await ex.GetResponseStringAsync();
+            throw new HttpException(responseContent, null, "POST", baseRequest.Url.ToString(), ex.StatusCode);
         }
-        
-        var result = await resultRaw.Content.ReadFromJsonAsync<AuthentikGroupV3>(cancellationToken);
-        if (result is null)
-        {
-            throw new HttpRequestException("Failed to create group");
-        }
-        
-        return entity.CopyWithNewStatus(new IdPGroupStatus(
-            result.pk ?? string.Empty,
-            result.name
-        ));
     }
 
-    private static StringBuilder BuildUrl(IdPGroup entity, bool isCreateAction = false)
+    private async Task<IFlurlRequest> AcquireBaseRequest(IdPGroup entity, CancellationToken cancellationToken)
     {
-        var url = new StringBuilder(entity.IdPProvider.BaseUrl)
-            .Append('/')
-            .Append(GroupEndpoint)
-            .Append('/');
-            
-        if(!isCreateAction)
-            url.Append(entity.Status.GroupId);
-            
-        if(!entity.Status.GroupId.Equals(string.Empty) && !isCreateAction)
-            url.Append("/?attributes={\"managed-by\":\"moira\"}");
+        var token = await tokenService.AcquireTokenAsync(entity.IdPProvider, cancellationToken);
 
-        if(entity.Status.GroupId.Equals(string.Empty) && !isCreateAction)
-        {
-            url.Append("?name=").Append(entity.Spec.DisplayName).Append("&attributes={\"managed-by\":\"moira\"}");
-        }
+        var baseRequest = entity.IdPProvider.BaseUrl
+            .AppendPathSegments(GroupEndpoint, '/')
+            .AppendQueryParam("attributes", JsonSerializer.Serialize(_groupAttributes))
+            .WithOAuthBearerToken(token);
         
-        return url;
+        return baseRequest;
+    }
+    
+    private async Task<IFlurlRequest> AcquireBaseRequest2(IdPProvider provider, string? name, Dictionary<string, object> attributes, CancellationToken cancellationToken)
+    {
+        var token = await tokenService.AcquireTokenAsync(provider, cancellationToken);
+
+        var baseRequest = provider.BaseUrl
+            .AppendPathSegments(GroupEndpoint, '/')
+            .AppendQueryParam("attributes", JsonSerializer.Serialize(attributes))
+            .WithOAuthBearerToken(token);
+        
+        if (name is not null)
+            baseRequest.AppendQueryParam("name", name);
+        
+        return baseRequest;
     }
 }

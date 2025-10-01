@@ -15,7 +15,8 @@ Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Fatal)
     .MinimumLevel.Override("System.Net.Http", LogEventLevel.Fatal)
-    .MinimumLevel.Override("KubeOps.Operator", LogEventLevel.Fatal)
+    .MinimumLevel.Override("KubeOps.Operator", LogEventLevel.Fatal)    
+    .MinimumLevel.Override("Moira", LogEventLevel.Information)
     .WriteTo.Console()
     .CreateLogger();
 
