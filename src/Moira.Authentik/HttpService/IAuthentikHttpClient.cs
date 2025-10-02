@@ -4,5 +4,5 @@ namespace Moira.Authentik.HttpService;
 
 public interface IAuthentikHttpClient
 {
-    IHttpService<AuthentikGroupV3, AuthentikGroupV3> Groups { get; }
+    IHttpService<AuthentikGroupV3, AuthentikGroupV3, string> Groups { get; }
 }

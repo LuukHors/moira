@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Flurl.Http;
 using Moira.Authentik.Authentication;
 using Moira.Authentik.Models;
@@ -22,28 +21,29 @@ public class AuthentikHttpService<TModel, TModelWrite, TId>(
             .ReceiveJson<TModel>();
     }
 
-    public async Task<AuthentikPageResult<TModel>> FindAsync(string? name, IReadOnlyDictionary<string, object>? attributes, IdPProvider provider, CancellationToken cancellationToken)
+    public async Task<TModel?> FindAsync(string? name, IReadOnlyDictionary<string, object>? attributes, IdPProvider provider, CancellationToken cancellationToken)
     {
+        var request = await BuildUrl(provider, route.CollectionPath, cancellationToken);
+
         try
         {
-            var request = await BuildUrl(provider, route.CollectionPath, cancellationToken);
-        
-            if(attributes is not null)
+            if (attributes is not null)
                 request.AppendQueryParam("attributes", JsonSerializer.Serialize(attributes));
-        
-            if(!string.IsNullOrEmpty(name)) 
+
+            if (!string.IsNullOrEmpty(name))
                 request.AppendQueryParam("name", name);
 
-            return await request
+            var results = await request
                 .GetAsync(cancellationToken: cancellationToken)
                 .ReceiveJson<AuthentikPageResult<TModel>>();
 
+            return results.Results.FirstOrDefault();
         }
-        catch (FlurlHttpException e)
-        {
-            throw await WrapAsync();
-        }
+        catch (FlurlHttpException e) { throw await WrapAsync(e, "GET", request.Url); }
     }
+
+    public async Task<TModel?> FindByNameAsync(string name, IdPProvider provider, CancellationToken cancellationToken)
+    => await FindAsync(name, null, provider, cancellationToken);
 
     public Task<TModel> CreateAsync(TModelWrite model, IdPProvider provider, CancellationToken cancellationToken)
     {
@@ -71,7 +71,7 @@ public class AuthentikHttpService<TModel, TModelWrite, TId>(
             .WithHeader("Accept", "application/json");
     }
 
-    private async Task<HttpException> WrapAsync(FlurlHttpException ex, string verb, string path)
+    private static async Task<HttpException> WrapAsync(FlurlHttpException ex, string verb, string path)
     {
         var body = await ex.GetResponseStringAsync();
         return new HttpException(body, null, verb, path, ex.StatusCode);
