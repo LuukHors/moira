@@ -28,20 +28,15 @@ public class AuthentikGroupHandler(
     public async Task<IdPCommandResult<IdPGroup>> CreateAsync(IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
     {
         logger.LogInformation("[{commandId}][{entityType}][{entityName}] Group does not exist yet, creating..", command.Id, nameof(IdPGroup), command.Entity.Name);
-        
-        var parentGroups = await httpClient.ListAsync(
-            command.Entity.Spec.MemberOf.FirstOrDefault(),
-            _defaultAttributes,
-            command.Entity.IdPProvider, 
-            null, 
-            cancellationToken);
-        
-        var group = command.Entity.ToAuthentikGroup(parentGroups.Results.FirstOrDefault()?.pk ?? string.Empty, _defaultAttributes);
+
+        var group = await ConvertToAuthentikGroup(command, cancellationToken);
+
         var result = await httpClient.CreateAsync(group, command.Entity.IdPProvider, cancellationToken);
 
         return new IdPCommandResult<IdPGroup>(command.Id, command.Entity.CopyWithNewStatus(new IdPGroupStatus(
             result.pk!,
-            result.name
+            result.name,
+            !string.IsNullOrEmpty(result.parent) ? [result.parent] : []
         )));
     }
 
@@ -53,24 +48,62 @@ public class AuthentikGroupHandler(
             
             return new IdPCommandResult<IdPGroup>(command.Id, command.Entity.CopyWithNewStatus(new IdPGroupStatus(
                 currentEntity.pk ?? string.Empty,
-                currentEntity.name
+                currentEntity.name,
+                !string.IsNullOrEmpty(currentEntity.parent) ? [currentEntity.parent] : []
             )));
         }
 
         logger.LogInformation("[{commandId}][{entityType}][{entityName}] Group is not up-to-date, updating...", command.Id, nameof(IdPGroup), command.Entity.Name);
-        var idPGroup = await httpService.UpdateAsync(command.Entity, cancellationToken);
-        
-        return new IdPCommandResult<IdPGroup>(command.Id, idPGroup);
+
+        var group = await ConvertToAuthentikGroup(command, cancellationToken);
+
+        var result = await httpClient.UpdateAsync(command.Entity.Status.GroupId, group, command.Entity.IdPProvider, cancellationToken);
+
+        return new IdPCommandResult<IdPGroup>(command.Id, command.Entity.CopyWithNewStatus(new IdPGroupStatus(
+            result.pk!,
+            result.name,
+            !string.IsNullOrEmpty(result.parent) ? [result.parent] : []
+        )));
     }
 
     private static bool ShouldUpdateGroup(AuthentikGroupV3 currentEntity, IdPCommand<IdPGroup> command)
     {
-        if (!command.Entity.Spec.DisplayName.Equals(currentEntity.name, StringComparison.OrdinalIgnoreCase))
+        var hasMemberOf = command.Entity.Spec.MemberOf.Any();
+        
+        if (!command.Entity.Spec.DisplayName.Equals(currentEntity.name))
             return true;
 
-        if (command.Entity.Spec.MemberOf.Any() && string.IsNullOrEmpty(currentEntity.parent))
+        if (hasMemberOf && string.IsNullOrEmpty(currentEntity.parent))
+            return true;
+
+        if (!hasMemberOf && !string.IsNullOrEmpty(currentEntity.parent))
             return true;
             
-        return false;
+        return !string.IsNullOrEmpty(command.Entity.Spec.MemberOf.FirstOrDefault()) 
+                    && !command.Entity.Status.MemberOfGroupIds.Contains(currentEntity.parent);
+    }
+    
+    private async Task<AuthentikGroupV3> ConvertToAuthentikGroup(IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
+    {
+        AuthentikGroupV3? parentGroup = null;
+        var firstMemberOf = command.Entity.Spec.MemberOf.FirstOrDefault();
+        
+        if (!string.IsNullOrEmpty(firstMemberOf))
+        {
+            var parentGroups = await httpClient.ListAsync(
+                firstMemberOf,
+                null,
+                command.Entity.IdPProvider, 
+                null, 
+                cancellationToken);
+
+            parentGroup = parentGroups.Results.FirstOrDefault();
+        }
+        
+        var group = command.Entity.ToAuthentikGroup(
+            parentGroup?.pk ?? string.Empty,
+            _defaultAttributes);
+        
+        return group;
     }
 }

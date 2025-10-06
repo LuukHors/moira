@@ -36,6 +36,7 @@ public class GroupResultHandler(
         entity.Status.DisplayName = group.Status.DisplayName;
         entity.Status.GroupId = group.Status.GroupId;
         entity.Status.ObservedGeneration = entity.Metadata.Generation;
+        entity.Status.MemberOfGroupIds = group.Status.MemberOfGroupIds;
         entity.Status.Synced = true;
         entity.Status.ErrorMessage = string.Empty;
 

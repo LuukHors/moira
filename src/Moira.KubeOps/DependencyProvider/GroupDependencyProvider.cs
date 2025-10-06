@@ -32,7 +32,7 @@ public class GroupDependencyProvider(
             entity.Name(),
             idPProvider,
             new IdPGroupSpec(entity.Spec.DisplayName, entity.Spec.MemberOf),
-            new IdPGroupStatus(entity.Status.GroupId, entity.Status.DisplayName)
+            new IdPGroupStatus(entity.Status.GroupId, entity.Status.DisplayName, entity.Status.MemberOfGroupIds)
         );
     }
 }

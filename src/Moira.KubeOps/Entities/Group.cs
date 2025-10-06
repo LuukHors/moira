@@ -17,6 +17,7 @@ public class Group : CustomKubernetesEntity<Group.GroupSpec, Group.GroupStatus>
     {
         public string GroupId { get; set; } = string.Empty;
         public string DisplayName { get; set; } = string.Empty;
+        public IEnumerable<string> MemberOfGroupIds { get; set; } = [];
         public bool Synced { get; set; } = false;
         public long? ObservedGeneration { get; set; } = 0;
         public string ErrorMessage { get; set; } = string.Empty;

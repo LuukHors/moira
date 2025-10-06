@@ -103,8 +103,9 @@ public class AuthentikGroupHttpService(
                 .ReceiveJson<AuthentikGroupV3>();
             
             return entity.CopyWithNewStatus(new IdPGroupStatus(
-                result.pk ?? string.Empty,
-                result.name
+                result.pk!,
+                result.name,
+                !string.IsNullOrEmpty(result.parent) ? [result.parent] : []
             ));
         }
         catch(FlurlHttpException ex)
