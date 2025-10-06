@@ -4,4 +4,4 @@ public sealed record AuthentikPageResult<TModel>(
     int Count,
     string? Next,
     string? Previous,
-    IReadOnlyList<TModel> Results);
+    IEnumerable<TModel> Results);

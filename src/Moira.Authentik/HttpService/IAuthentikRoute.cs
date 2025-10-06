@@ -2,6 +2,6 @@ namespace Moira.Authentik.HttpService;
 
 public interface IAuthentikRoute<TModel, TModelWrite, in TId>
 {
-    string CollectionPath { get; }
-    string SinglePath(TId id);
+    string CollectionEntityPath { get; }
+    string SingleEntityPath(TId id);
 }

@@ -19,6 +19,10 @@ public static class DependencyInjectionExtensions
         
         return services.Scan(scan => scan
             .FromAssemblies(assembly)
+            .AddClasses(classes => classes.AssignableTo(typeof(IHttpService<,,>)))
+            .AsImplementedInterfaces()
+            .AddClasses(classes => classes.AssignableTo(typeof(IAuthentikRoute<,,>)))
+            .AsImplementedInterfaces()
             .AddClasses(classes => classes.AssignableTo(typeof(IAuthentikHttpService<,>)))
             .AsImplementedInterfaces()
             .AddClasses(classes => classes.AssignableTo(typeof(IAuthentikHandler<,>)))
