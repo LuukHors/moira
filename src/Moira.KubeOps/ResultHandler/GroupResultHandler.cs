@@ -13,33 +13,28 @@ public class GroupResultHandler(
     EntityRequeue<Group> entityRequeue,
     ILogger<GroupResultHandler> logger) : IResultHandler<Group, IdPGroup>
 {
-    public Task HandleAsync(Group entity, CancellationToken cancellationToken, IdPGroup? idpEntity = null, IdPException? exception = null)
-        => idpEntity is null
-            ? HandleExceptionResult(entity, exception!, cancellationToken) 
-            : HandleSuccessResult(entity, idpEntity, cancellationToken);
+    public async Task HandleAsync(Group entity, IdPGroup idpEntity, CancellationToken cancellationToken)
+    {
+        entity.Status.ObservedGeneration = entity.Metadata.Generation;
+        entity.Status.DisplayName = idpEntity.Status.DisplayName;
+        entity.Status.GroupId = idpEntity.Status.GroupId;
+        entity.Status.ObservedGeneration = entity.Metadata.Generation;
+        entity.Status.MemberOfGroupIds = idpEntity.Status.MemberOfGroupIds;
+        entity.Status.Synced = true;
+        entity.Status.ErrorMessage = string.Empty;
 
-    private async Task HandleExceptionResult(Group entity, IdPException exception, CancellationToken cancellationToken)
+        await client.UpdateStatusAsync(entity, cancellationToken);
+        
+        entityRequeue(entity, TimeSpan.FromSeconds(20));
+    }
+
+    public async Task HandleExceptionAsync(Group entity, IdPException exception, CancellationToken cancellationToken)
     {
         logger.LogError(exception, "");
         
         entity.Status.ObservedGeneration = entity.Metadata.Generation;
         entity.Status.Synced = false;
         entity.Status.ErrorMessage = exception.Message;
-        await client.UpdateStatusAsync(entity, cancellationToken);
-        
-        entityRequeue(entity, TimeSpan.FromSeconds(200));
-    }
-
-    private async Task HandleSuccessResult(Group entity, IdPGroup group, CancellationToken cancellationToken)
-    {
-        entity.Status.ObservedGeneration = entity.Metadata.Generation;
-        entity.Status.DisplayName = group.Status.DisplayName;
-        entity.Status.GroupId = group.Status.GroupId;
-        entity.Status.ObservedGeneration = entity.Metadata.Generation;
-        entity.Status.MemberOfGroupIds = group.Status.MemberOfGroupIds;
-        entity.Status.Synced = true;
-        entity.Status.ErrorMessage = string.Empty;
-
         await client.UpdateStatusAsync(entity, cancellationToken);
         
         entityRequeue(entity, TimeSpan.FromSeconds(20));

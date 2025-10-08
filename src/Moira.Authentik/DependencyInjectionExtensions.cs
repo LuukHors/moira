@@ -23,8 +23,6 @@ public static class DependencyInjectionExtensions
             .AsImplementedInterfaces()
             .AddClasses(classes => classes.AssignableTo(typeof(IAuthentikRoute<,,>)))
             .AsImplementedInterfaces()
-            .AddClasses(classes => classes.AssignableTo(typeof(IAuthentikHttpService<,>)))
-            .AsImplementedInterfaces()
             .AddClasses(classes => classes.AssignableTo(typeof(IAuthentikHandler<,>)))
             .AsImplementedInterfaces()
             .AddClasses(classes => classes.AssignableTo(typeof(IProviderAdapter<>)))

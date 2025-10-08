@@ -9,7 +9,6 @@ using Moira.Common.Mappers;
 namespace Moira.Authentik.Handlers;
 
 public class AuthentikGroupHandler(
-    IAuthentikHttpService<IdPGroup, AuthentikGroupV3> httpService,
     IHttpService<AuthentikGroupV3, AuthentikGroupV3, string> httpClient,
     ILogger<AuthentikGroupHandler> logger) : IAuthentikHandler<IdPGroup, AuthentikGroupV3>
 {
@@ -65,7 +64,10 @@ public class AuthentikGroupHandler(
             !string.IsNullOrEmpty(result.parent) ? [result.parent] : []
         )));
     }
-
+    
+    public async Task<bool> DeleteAsync(IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
+        => await httpClient.DeleteAsync(command.Entity.Status.GroupId, command.Entity.IdPProvider, cancellationToken);
+    
     private static bool ShouldUpdateGroup(AuthentikGroupV3 currentEntity, IdPCommand<IdPGroup> command)
     {
         var hasMemberOf = command.Entity.Spec.MemberOf.Any();

@@ -23,6 +23,7 @@ public class GroupController(
 
     public Task DeletedAsync(Group entity, CancellationToken cancellationToken)
     {
+        logger.LogInformation("deleting entity");
         throw new NotImplementedException();
     }
 }

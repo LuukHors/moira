@@ -23,7 +23,7 @@ public class AdapterHandler<TK8SEntity, TEntity>(
             var idPEntity = await dependencyProvider.ResolveAsync(entity, cancellationToken);
             var provider = await providerRouter.ResolveAsync(idPEntity.IdPProvider.Type, cancellationToken);
 
-            var command = new IdPCommand<TEntity>(Guid.NewGuid(), idPEntity);
+            var command = new IdPCommand<TEntity>(Guid.NewGuid(), idPEntity, IdpCommandAction.Reconsile);
 
             logger.LogDebug(
                 "[{commandId}][{entityType}][{entityName}] Sending command to provider {providerName}", command.Id,
@@ -35,23 +35,22 @@ public class AdapterHandler<TK8SEntity, TEntity>(
                 "[{commandId}][{entityType}][{entityName}] Received result from provider {providerName}, handling result..",
                 command.Id, typeof(TEntity).Name, idPEntity.Name, provider.Name);
 
-            await resultHandler.HandleAsync(entity, cancellationToken, result.Entity, result.Exception);
+            await resultHandler.HandleAsync(entity, result.Entity, cancellationToken);
         }
         catch (InvalidOperationException ex)
         {
             var idpEx = ex.ToIdPException();
-            await resultHandler.HandleAsync(entity, cancellationToken, null, idpEx);
+            await resultHandler.HandleExceptionAsync(entity, idpEx, cancellationToken);
         }
         catch (HttpException ex)
         {
             var idpEx = ex.ToIdPException();
-            await resultHandler.HandleAsync(entity, cancellationToken, null, idpEx);
+            await resultHandler.HandleExceptionAsync(entity, idpEx, cancellationToken);
         }
         catch (Exception ex)
         {
             var idpEx = ex.ToIdPException();
-            await resultHandler.HandleAsync(entity, cancellationToken, null, idpEx);
-            logger.LogError(ex, "");
+            await resultHandler.HandleExceptionAsync(entity, idpEx, cancellationToken);
         }
     }
 }
