@@ -12,14 +12,8 @@ public class AuthentikGroupProviderAdapter(
     IAuthentikHandler<IdPGroup, AuthentikGroupV3> handler,
     ILogger<AuthentikGroupProviderAdapter> logger) : AbstractAuthentikProviderAdapter, IProviderAdapter<IdPGroup>
 {
-    public async Task<IdPCommandResult<IdPGroup>> ExecuteAsync(IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
+    public async Task<IdPCommandResult<IdPGroup>> ExecuteReconcileAsync(IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
     {
-        if (command.Action.Equals(IdpCommandAction.Delete))
-        {
-            await handler.DeleteAsync(command, cancellationToken);
-            return new IdPCommandResult<IdPGroup>(command.Id, command.Entity);
-        }
-        
         if (command.Entity.Spec.MemberOf.Count() > 1)
             logger.LogWarning("[{commandId}][{entityType}][{entityName}] Authentik adapter does not support more than one memberOf for groups", command.Id, nameof(IdPGroup), command.Entity.Name);
         
@@ -41,5 +35,10 @@ public class AuthentikGroupProviderAdapter(
         }
         
         return await handler.UpdateAsync(group, command, cancellationToken);
+    }
+
+    public Task<bool> ExecuteDeleteAsync(IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
+    {
+        throw new NotImplementedException();
     }
 }

@@ -16,5 +16,7 @@ public class GroupValidator : AbstractValidator<Group>
         RuleFor(g => g.Spec.DisplayName)
             .NotEmpty()
             .WithMessage("The group's displayName should not be empty");
+        RuleFor(g => g.Spec.ProviderRef.Name).NotEmpty();
+        RuleFor(g => g.Spec.ProviderRef.Namespace).NotEmpty();
     }
 }

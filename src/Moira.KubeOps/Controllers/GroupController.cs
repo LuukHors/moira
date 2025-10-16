@@ -13,7 +13,7 @@ public class GroupController(
     {
         try
         {
-            await handler.HandleAsync(entity, cancellationToken);
+            await handler.HandleReconcileAsync(entity, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -21,9 +21,15 @@ public class GroupController(
         }
     }
 
-    public Task DeletedAsync(Group entity, CancellationToken cancellationToken)
+    public async Task DeletedAsync(Group entity, CancellationToken cancellationToken)
     {
-        logger.LogInformation("deleting entity");
-        throw new NotImplementedException();
+        try
+        {
+            await handler.HandleDeleteAsync(entity, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Something went wrong");
+        }
     }
 }
