@@ -4,7 +4,9 @@ metadata:
   name: moira-test2
   namespace: default
 spec:
-  displayName: "moira-test2"
+  displayName: "moira-test22"
+  memberOf:
+  - moira-test1
   providerRef:
     name: authentik-provider
 ---
@@ -15,8 +17,6 @@ metadata:
   namespace: default
 spec:
   displayName: "moira-test1"
-  memberOf:
-  - "moira-test3"
   providerRef:
     name: authentik-provider
 ---

@@ -39,4 +39,9 @@ public class GroupResultHandler(
         
         entityRequeue(entity, TimeSpan.FromSeconds(20));
     }
+
+    public Task HandleDeleteAsync(Group entity, IdPGroup idpEntity, CancellationToken cancellationToken)
+    {
+        return Task.CompletedTask;
+    }
 }

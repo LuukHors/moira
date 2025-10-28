@@ -1,4 +1,4 @@
-namespace Moira.Authentik.HttpService;
+namespace Moira.Authentik.HttpService.Routes;
 
 public interface IAuthentikRoute<TModel, TModelWrite, in TId>
 {

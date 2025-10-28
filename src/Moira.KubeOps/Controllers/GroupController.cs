@@ -5,31 +5,8 @@ using Moira.KubeOps.Entities;
 
 namespace Moira.KubeOps.Controllers;
 
-public class GroupController(
-    IAdapterHandler<Group> handler,
-    ILogger<GroupController> logger) : IEntityController<Group>
+public class GroupController(IAdapterHandler<Group> handler) : IEntityController<Group>
 {
-    public async Task ReconcileAsync(Group entity, CancellationToken cancellationToken)
-    {
-        try
-        {
-            await handler.HandleReconcileAsync(entity, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Something went wrong");
-        }
-    }
-
-    public async Task DeletedAsync(Group entity, CancellationToken cancellationToken)
-    {
-        try
-        {
-            await handler.HandleDeleteAsync(entity, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Something went wrong");
-        }
-    }
+    public async Task ReconcileAsync(Group entity, CancellationToken cancellationToken) => await handler.HandleReconcileAsync(entity, cancellationToken);
+    public Task DeletedAsync(Group entity, CancellationToken cancellationToken) => Task.CompletedTask;
 }

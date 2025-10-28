@@ -8,4 +8,5 @@ public interface IResultHandler<in TK8SEntity, in TEntity> where TK8SEntity : Cu
 {
     Task HandleAsync(TK8SEntity entity, TEntity idpEntity, CancellationToken cancellationToken);
     Task HandleExceptionAsync(TK8SEntity entity, IdPException exception, CancellationToken cancellationToken);
+    Task HandleDeleteAsync(TK8SEntity entity, TEntity idpEntity, CancellationToken cancellationToken);
 }

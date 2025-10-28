@@ -26,9 +26,9 @@ public class AuthentikGroupHandler(
 
     public async Task<IdPCommandResult<IdPGroup>> CreateAsync(IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
     {
-        logger.LogInformation("[{commandId}][{entityType}][{entityName}] Group does not exist yet, creating..", command.Id, nameof(IdPGroup), command.Entity.Name);
+        logger.LogInformation("Group does not exist yet, creating..");
 
-        var group = await ConvertToAuthentikGroup(command, cancellationToken);
+        var group = await BuildAuthentikGroupAsync(command, cancellationToken);
 
         var result = await httpClient.CreateAsync(group, command.Entity.IdPProvider, cancellationToken);
 
@@ -39,24 +39,25 @@ public class AuthentikGroupHandler(
         )));
     }
 
-    public async Task<IdPCommandResult<IdPGroup>> UpdateAsync(AuthentikGroupV3 currentEntity, IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
+    public async Task<IdPCommandResult<IdPGroup>> UpdateAsync(AuthentikGroupV3 current, IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
     {
-        if (!ShouldUpdateGroup(currentEntity, command))
+        
+        if (!ShouldUpdate(current, command))
         {
-            logger.LogInformation("[{commandId}][{entityType}][{entityName}] Group is already up-to-date", command.Id, nameof(IdPGroup), command.Entity.Name);
+            logger.LogInformation("Group is already up-to-date");
             
             return new IdPCommandResult<IdPGroup>(command.Id, command.Entity.CopyWithNewStatus(new IdPGroupStatus(
-                currentEntity.pk ?? string.Empty,
-                currentEntity.name,
-                !string.IsNullOrEmpty(currentEntity.parent) ? [currentEntity.parent] : []
+                current.pk ?? string.Empty,
+                current.name,
+                !string.IsNullOrEmpty(current.parent) ? [current.parent] : []
             )));
         }
 
-        logger.LogInformation("[{commandId}][{entityType}][{entityName}] Group is not up-to-date, updating...", command.Id, nameof(IdPGroup), command.Entity.Name);
+        logger.LogInformation("Group is not up-to-date, updating...");
 
-        var group = await ConvertToAuthentikGroup(command, cancellationToken);
+        var group = await BuildAuthentikGroupAsync(command, cancellationToken);
 
-        var result = await httpClient.UpdateAsync(command.Entity.Status.GroupId, group, command.Entity.IdPProvider, cancellationToken);
+        var result = await httpClient.UpdateAsync(current.pk!, group, command.Entity.IdPProvider, cancellationToken);
 
         return new IdPCommandResult<IdPGroup>(command.Id, command.Entity.CopyWithNewStatus(new IdPGroupStatus(
             result.pk!,
@@ -68,7 +69,7 @@ public class AuthentikGroupHandler(
     public async Task<bool> DeleteAsync(IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
         => await httpClient.DeleteAsync(command.Entity.Status.GroupId, command.Entity.IdPProvider, cancellationToken);
     
-    private static bool ShouldUpdateGroup(AuthentikGroupV3 currentEntity, IdPCommand<IdPGroup> command)
+    private static bool ShouldUpdate(AuthentikGroupV3 currentEntity, IdPCommand<IdPGroup> command)
     {
         var hasMemberOf = command.Entity.Spec.MemberOf.Any();
         
@@ -85,27 +86,22 @@ public class AuthentikGroupHandler(
                     && !command.Entity.Status.MemberOfGroupIds.Contains(currentEntity.parent);
     }
     
-    private async Task<AuthentikGroupV3> ConvertToAuthentikGroup(IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
+    private async Task<AuthentikGroupV3> BuildAuthentikGroupAsync(IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
     {
-        AuthentikGroupV3? parentGroup = null;
-        var firstMemberOf = command.Entity.Spec.MemberOf.FirstOrDefault();
-        
-        if (!string.IsNullOrEmpty(firstMemberOf))
-        {
-            var parentGroups = await httpClient.ListAsync(
-                firstMemberOf,
-                null,
-                command.Entity.IdPProvider, 
-                null, 
-                cancellationToken);
+        var parentId = await ResolveParentIdAsync(command, cancellationToken);
+        return command.Entity.ToAuthentikGroup(parentId, _defaultAttributes);
+    }
 
-            parentGroup = parentGroups.Results.FirstOrDefault();
-        }
+    private async Task<string> ResolveParentIdAsync(IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
+    {
+        var firstMemberOf = command.Entity.Spec.MemberOf.FirstOrDefault();
+
+        if (string.IsNullOrEmpty(firstMemberOf))
+            return string.Empty;
         
-        var group = command.Entity.ToAuthentikGroup(
-            parentGroup?.pk ?? string.Empty,
-            _defaultAttributes);
+        var parent = await httpClient.GetByNameAsync(firstMemberOf, command.Entity.IdPProvider, null, cancellationToken)
+            ?? throw new InvalidOperationException($"Could not find parent group '{firstMemberOf}'");
         
-        return group;
+        return parent.pk!;
     }
 }

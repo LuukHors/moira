@@ -17,7 +17,7 @@ Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Override("System.Net.Http", LogEventLevel.Fatal)
     .MinimumLevel.Override("KubeOps.Operator", LogEventLevel.Fatal)    
     .MinimumLevel.Override("Moira", LogEventLevel.Information)
-    .WriteTo.Console()
+    .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss}][{Level:w3}][{RequestId}][{EntityType}][{EntityName}] {Message:lj}{NewLine}{Exception}")
     .CreateLogger();
 
 builder.Services

@@ -1,6 +1,8 @@
+using System.Net;
 using System.Text.Json;
 using Flurl.Http;
 using Moira.Authentik.Authentication;
+using Moira.Authentik.HttpService.Routes;
 using Moira.Authentik.Models;
 using Moira.Common.Exceptions;
 using Moira.Common.Models;
@@ -92,9 +94,10 @@ public class AuthentikHttpService<TModel, TModelWrite, TId>(
         try
         {
             var result = await request
+                .AllowHttpStatus(404)
                 .DeleteAsync(cancellationToken: cancellationToken);
             
-            return result.StatusCode is >= 200 and < 300;
+            return result.StatusCode is >= 200 and < 300 or 404;
         } 
         catch (FlurlHttpException e) { throw await WrapAsync(e, "DELETE", request.Url); }
     }

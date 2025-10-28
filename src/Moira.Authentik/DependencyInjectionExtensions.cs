@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Moira.Authentik.Authentication;
 using Moira.Authentik.Handlers;
 using Moira.Authentik.HttpService;
+using Moira.Authentik.HttpService.Routes;
 using Moira.Authentik.ProviderAdapters;
 using Moira.Common.Models;
 using Moira.Common.Provider;

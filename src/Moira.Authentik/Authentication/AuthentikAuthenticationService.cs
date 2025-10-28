@@ -11,7 +11,6 @@ using Moira.Common.Models;
 namespace Moira.Authentik.Authentication;
 
 public class AuthentikAuthenticationService(
-    HttpClient httpClient,
     ILogger<AuthentikAuthenticationService> logger) : IAuthentikAuthenticationService
 {
     private readonly Dictionary<string, AuthentikToken> _tokens = new();
