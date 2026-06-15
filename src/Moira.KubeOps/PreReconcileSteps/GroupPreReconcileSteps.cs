@@ -4,7 +4,7 @@ using Moira.KubeOps.Entities;
 
 namespace Moira.KubeOps.PreReconcileSteps;
 
-public class GroupPreConcileSteps(
+public class GroupPreReconcileSteps(
     EntityFinalizerAttacher<GroupFinalizer, Group> finalizer) : IPreReconcileSteps<Group>
 {
     public async Task<bool> ExecuteAsync(Group entity, CancellationToken cancellationToken)

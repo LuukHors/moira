@@ -19,7 +19,7 @@ public class AuthentikAuthenticationService(
     {
         var tokenCached = _tokens.TryGetValue(provider.Name, out var token);
 
-        if (tokenCached && token is not null && token.ExpiresAt > DateTime.UtcNow.AddMinutes(-3))
+        if (tokenCached && token is not null && token.ExpiresAt > DateTime.UtcNow.AddMinutes(-1))
         {
             logger.LogDebug("Getting token from cache");
             return token.Token;
@@ -49,7 +49,7 @@ public class AuthentikAuthenticationService(
             var result = await url.PostUrlEncodedAsync(requestContent, cancellationToken: cancellationToken)
                 .ReceiveJson<AuthentikAuthenticationResponseBody>();
 
-            _tokens[provider.Name] = new AuthentikToken(result.access_token, DateTime.UtcNow.AddSeconds(result.expires_in - 180));
+            _tokens[provider.Name] = new AuthentikToken(result.access_token, DateTime.UtcNow.AddSeconds(result.expires_in - 60));
             return result.access_token;
         }
         catch (FlurlHttpTimeoutException ex)

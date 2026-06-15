@@ -43,7 +43,7 @@ public class AdapterHandler<TK8SEntity, TEntity>(
                 logger.LogDebug("Entity was modified");
                 return;
             }
-            logger.LogDebug("Entity was not");
+            logger.LogDebug("Entity was not modified");
             
             logger.LogDebug("Getting dependencies...");
             var idPEntity = await dependencyProvider.ResolveAsync(entity, cancellationToken);
@@ -99,12 +99,12 @@ public class AdapterHandler<TK8SEntity, TEntity>(
             var command = new IdPCommand<TEntity>(requestId, idPEntity);
             
             logger.LogDebug("Sending delete command to provider {providerName}", provider.Name);
-            await provider.ExecuteDeleteAsync(command, cancellationToken);
+            var entityDeleted = await provider.ExecuteDeleteAsync(command, cancellationToken);
             logger.LogDebug("Got result from provider {providerName}", provider.Name);
 
             await resultHandler.HandleDeleteAsync(entity, idPEntity, cancellationToken);
-            
-            logger.LogInformation("Deleted entity");
+
+            if (entityDeleted) logger.LogInformation("Entity has been deleted");
         }
         catch (InvalidOperationException ex)
         {

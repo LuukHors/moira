@@ -13,10 +13,10 @@ builder.Logging.ClearProviders();
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
-    .MinimumLevel.Override("Microsoft", LogEventLevel.Fatal)
-    .MinimumLevel.Override("System.Net.Http", LogEventLevel.Fatal)
-    .MinimumLevel.Override("KubeOps.Operator", LogEventLevel.Fatal)    
-    .MinimumLevel.Override("Moira", LogEventLevel.Information)
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+    .MinimumLevel.Override("System.Net.Http", LogEventLevel.Information)
+    .MinimumLevel.Override("KubeOps.Operator", LogEventLevel.Information)    
+    .MinimumLevel.Override("Moira", LogEventLevel.Debug)
     .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss}][{Level:w3}][{RequestId}][{EntityType}][{EntityName}] {Message:lj}{NewLine}{Exception}")
     .CreateLogger();
 

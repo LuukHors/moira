@@ -5,8 +5,8 @@ using Moira.KubeOps.Entities;
 
 namespace Moira.KubeOps.Controllers;
 
-public class GroupController(IAdapterHandler<Group> handler) : IEntityController<Group>
+internal class GroupController(IAdapterHandler<Group> handler) : IEntityController<Group>
 {
-    public async Task ReconcileAsync(Group entity, CancellationToken cancellationToken) => await handler.HandleReconcileAsync(entity, cancellationToken);
+    public Task ReconcileAsync(Group entity, CancellationToken cancellationToken) => handler.HandleReconcileAsync(entity, cancellationToken);
     public Task DeletedAsync(Group entity, CancellationToken cancellationToken) => Task.CompletedTask;
 }

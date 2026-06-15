@@ -2,10 +2,11 @@ using k8s.Models;
 using KubeOps.KubernetesClient;
 using Microsoft.Extensions.Logging;
 using Moira.Common.Models;
+using Moira.KubeOps.DependencyProvider;
 using Moira.KubeOps.Entities;
 using Provider = Moira.KubeOps.Entities.Provider;
 
-namespace Moira.KubeOps.DependencyProvider;
+namespace Moira.KubeOps.AdapterHandler.DependencyProvider;
 
 public class GroupDependencyProvider(
     IKubernetesClient client,
@@ -32,7 +33,7 @@ public class GroupDependencyProvider(
             entity.Namespace(),
             entity.Name(),
             idPProvider,
-            new IdPGroupSpec(entity.Spec.DisplayName, entity.Spec.MemberOf),
+            new IdPGroupSpec(entity.Spec.DisplayName, entity.Spec.MemberOf, entity.Spec.AutoDelete),
             new IdPGroupStatus(entity.Status.GroupId, entity.Status.DisplayName, entity.Status.MemberOfGroupIds)
         );
     }

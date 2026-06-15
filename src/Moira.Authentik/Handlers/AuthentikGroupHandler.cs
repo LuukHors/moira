@@ -27,7 +27,6 @@ public class AuthentikGroupHandler(
     public async Task<IdPCommandResult<IdPGroup>> CreateAsync(IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
     {
         logger.LogInformation("Group does not exist yet, creating..");
-
         var group = await BuildAuthentikGroupAsync(command, cancellationToken);
 
         var result = await httpClient.CreateAsync(group, command.Entity.IdPProvider, cancellationToken);
@@ -65,9 +64,24 @@ public class AuthentikGroupHandler(
             !string.IsNullOrEmpty(result.parent) ? [result.parent] : []
         )));
     }
-    
+
     public async Task<bool> DeleteAsync(IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
-        => await httpClient.DeleteAsync(command.Entity.Status.GroupId, command.Entity.IdPProvider, cancellationToken);
+    {
+        if (!command.Entity.Spec.AutoDelete)
+        {
+            logger.LogInformation("Auto delete is not enabled, will not try to delete group");
+            return false;
+        }
+
+        if (string.IsNullOrEmpty(command.Entity.Status.GroupId))
+        {
+            logger.LogInformation("Group does not have a known GroupId, skipping deletion..");
+            return false;
+        }
+        
+        logger.LogInformation("Auto delete is enabled, deleting group..");
+        return await httpClient.DeleteAsync(command.Entity.Status.GroupId, command.Entity.IdPProvider, cancellationToken);
+    }
     
     private static bool ShouldUpdate(AuthentikGroupV3 currentEntity, IdPCommand<IdPGroup> command)
     {

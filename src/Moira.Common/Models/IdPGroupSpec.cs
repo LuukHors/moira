@@ -2,4 +2,5 @@
 
 public record IdPGroupSpec(
     string DisplayName,
-    IEnumerable<string> MemberOf);
+    IEnumerable<string> MemberOf,
+    bool AutoDelete);

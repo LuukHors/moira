@@ -15,8 +15,9 @@ public static class DependencyInjectionExtensions
     public static IServiceCollection AddMoiraKubeOps(this IServiceCollection services)
     {
         var assembly = Assembly.GetExecutingAssembly();
-        services.AddScoped<IAdapterHandler<Group>, AdapterHandler<Group,IdPGroup>>();
-        
+        services.AddScoped<IAdapterHandler<Group>, AdapterHandler<Group, IdPGroup>>();
+        services.AddScoped<IAdapterHandler<OidcApplication>, AdapterHandler<OidcApplication, IdPOidcApplication>>();
+        // services.AddScoped<IAdapterHandler<Provider>, AdapterHandler<Provider, IdPProvider>>();
         return services.Scan(scan => scan
             .FromAssemblies(assembly)
             .AddClasses(classes => classes.AssignableTo(typeof(IResultHandler<,>)))

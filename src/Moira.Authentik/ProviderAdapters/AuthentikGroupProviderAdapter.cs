@@ -18,23 +18,12 @@ public class AuthentikGroupProviderAdapter(
             logger.LogWarning("Authentik adapter does not support more than one memberOf for groups");
         
         var group = await handler.GetAsync(command, cancellationToken);
-
-        // if (group is not null && string.IsNullOrEmpty(command.Entity.Status.GroupId)) //this means that the group existed previously or had a attribute added.
-        // {
-        //     logger.LogInformation("[{commandId}][{entityType}][{entityName}] Group already exists and contains the correct attributes, setting status..", command.Id, nameof(IdPGroup), command.Entity.Name);
-        //     return new IdPCommandResult<IdPGroup>(command.Id, command.Entity.CopyWithNewStatus(new IdPGroupStatus(
-        //         group.pk!,
-        //         group.name,
-        //         !string.IsNullOrEmpty(group.parent) ? [group.parent] : []
-        //     )));
-        // }
-        
-        if (group is null)
+        if (group is not null)
         {
-            return await handler.CreateAsync(command, cancellationToken);
+            return await handler.UpdateAsync(group, command, cancellationToken);
         }
         
-        return await handler.UpdateAsync(group, command, cancellationToken);
+        return await handler.CreateAsync(command, cancellationToken);
     }
 
     public async Task<bool> ExecuteDeleteAsync(IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
