@@ -1,0 +1,54 @@
+using KubeOps.KubernetesClient;
+using Microsoft.Extensions.Logging;
+using Moira.Common.Exceptions;
+using Moira.Common.Models;
+using Moira.KubeOps.Entities;
+using Moira.KubeOps.Status;
+
+namespace Moira.KubeOps.ResultHandler;
+
+public class ProviderResultHandler(
+    IKubernetesClient client,
+    ILogger<ProviderResultHandler> logger) : IResultHandler<Provider, IdPProvider>
+{
+    public async Task HandleAsync(Provider entity, IdPProvider idpEntity, CancellationToken cancellationToken)
+    {
+        entity.Status.ObservedGeneration = entity.Metadata.Generation;
+        entity.UpsertCondition(
+            entity.Status.Conditions,
+            ConditionTypes.Ready,
+            ConditionStatus.True,
+            ConditionReasons.ProviderCheckSucceeded,
+            "Provider configuration is usable.");
+
+        await client.UpdateStatusAsync(entity, cancellationToken);
+    }
+
+    public async Task HandleExceptionAsync(Provider entity, IdPException exception, CancellationToken cancellationToken)
+    {
+        logger.LogError(exception, "");
+
+        entity.Status.ObservedGeneration = entity.Metadata.Generation;
+        entity.UpsertCondition(
+            entity.Status.Conditions,
+            ConditionTypes.Ready,
+            ConditionStatus.False,
+            ConditionReasons.ProviderCheckFailed,
+            exception.Message);
+
+        await client.UpdateStatusAsync(entity, cancellationToken);
+    }
+
+    public async Task HandleDeleteAsync(Provider entity, IdPProvider idpEntity, CancellationToken cancellationToken)
+    {
+        entity.Status.ObservedGeneration = entity.Metadata.Generation;
+        entity.UpsertCondition(
+            entity.Status.Conditions,
+            ConditionTypes.Ready,
+            ConditionStatus.False,
+            ConditionReasons.DeleteSucceeded,
+            "Provider is being deleted.");
+
+        await client.UpdateStatusAsync(entity, cancellationToken);
+    }
+}
