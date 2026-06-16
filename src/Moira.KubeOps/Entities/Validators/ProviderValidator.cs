@@ -9,6 +9,9 @@ public class ProviderValidator : AbstractValidator<Provider>
         RuleFor(p => p.Spec.Type)
             .NotNull()
             .NotEmpty();
+        RuleFor(p => p.Spec.BaseUrl)
+            .NotNull()
+            .NotEmpty();
         RuleFor(p => p.Spec.SecretRef)
             .NotNull();
         RuleFor(p => p.Spec.SecretRef.Name)

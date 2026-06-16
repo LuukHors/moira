@@ -3,7 +3,7 @@ using Moira.Common.Models;
 
 namespace Moira.Common.Provider;
 
-public interface IProviderAdapter<TEntity> where TEntity : IdPEntity
+public interface IProviderAdapter<TEntity> where TEntity : IdPEntityBase
 {
     public string Name { get; }
     public Task<IdPCommandResult<TEntity>> ExecuteReconcileAsync(IdPCommand<TEntity> command, CancellationToken cancellationToken);

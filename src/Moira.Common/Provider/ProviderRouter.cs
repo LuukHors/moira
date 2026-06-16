@@ -5,7 +5,7 @@ namespace Moira.Common.Provider;
 
 public class ProviderRouter<TEntity> (
     IEnumerable<IProviderAdapter<TEntity>> adapters,
-    ILogger<ProviderRouter<TEntity>> logger) : IProviderRouter<TEntity> where TEntity : IdPEntity 
+    ILogger<ProviderRouter<TEntity>> logger) : IProviderRouter<TEntity> where TEntity : IdPEntityBase
 {
     public Task<IProviderAdapter<TEntity>> ResolveAsync(string providerName, CancellationToken cancellationToken)
     {

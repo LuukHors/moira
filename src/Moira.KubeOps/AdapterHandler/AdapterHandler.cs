@@ -17,7 +17,7 @@ public class AdapterHandler<TK8SEntity, TEntity>(
     IDependencyProvider<TK8SEntity, TEntity> dependencyProvider,
     IProviderRouter<TEntity> providerRouter,
     IResultHandler<TK8SEntity, TEntity> resultHandler,
-    ILogger<AdapterHandler<TK8SEntity, TEntity>> logger) : IAdapterHandler<TK8SEntity> where TK8SEntity : CustomKubernetesEntity where TEntity : IdPEntity
+    ILogger<AdapterHandler<TK8SEntity, TEntity>> logger) : IAdapterHandler<TK8SEntity> where TK8SEntity : CustomKubernetesEntity where TEntity : IdPEntityBase
 {
     public async Task HandleReconcileAsync(TK8SEntity entity, CancellationToken cancellationToken)
     {
@@ -47,7 +47,7 @@ public class AdapterHandler<TK8SEntity, TEntity>(
             
             logger.LogDebug("Getting dependencies...");
             var idPEntity = await dependencyProvider.ResolveAsync(entity, cancellationToken);
-            var provider = await providerRouter.ResolveAsync(idPEntity.IdPProvider.Type, cancellationToken);
+            var provider = await providerRouter.ResolveAsync(GetProviderType(idPEntity), cancellationToken);
             logger.LogDebug("Received dependencies...");
             
             var command = new IdPCommand<TEntity>(requestId, idPEntity);
@@ -93,7 +93,7 @@ public class AdapterHandler<TK8SEntity, TEntity>(
             
             logger.LogDebug("Getting dependencies...");
             var idPEntity = await dependencyProvider.ResolveAsync(entity, cancellationToken);
-            var provider = await providerRouter.ResolveAsync(idPEntity.IdPProvider.Type, cancellationToken);
+            var provider = await providerRouter.ResolveAsync(GetProviderType(idPEntity), cancellationToken);
             logger.LogDebug("Received dependencies...");
 
             var command = new IdPCommand<TEntity>(requestId, idPEntity);
@@ -121,5 +121,15 @@ public class AdapterHandler<TK8SEntity, TEntity>(
             var idpEx = ex.ToIdPException();
             await resultHandler.HandleExceptionAsync(entity, idpEx, cancellationToken);
         }
+    }
+
+    private static string GetProviderType(TEntity entity)
+    {
+        return entity switch
+        {
+            IdPEntity idPEntity => idPEntity.IdPProvider.Type,
+            IdPProvider idPProvider => idPProvider.Type,
+            _ => throw new InvalidOperationException($"Unable to determine provider type for entity {typeof(TEntity).Name}")
+        };
     }
 }

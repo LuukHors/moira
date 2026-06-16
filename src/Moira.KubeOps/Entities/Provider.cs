@@ -17,6 +17,7 @@ public class Provider : CustomKubernetesEntity<Provider.ProviderSpec, Provider.P
 
     public class ProviderStatus
     {
-        
+        public long? ObservedGeneration { get; set; } = 0;
+        public IList<V1Condition> Conditions { get; set; } = new List<V1Condition>();
     }
 }
