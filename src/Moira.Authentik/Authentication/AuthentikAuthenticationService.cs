@@ -21,11 +21,11 @@ public class AuthentikAuthenticationService(
 
         if (tokenCached && token is not null && token.ExpiresAt > DateTime.UtcNow.AddMinutes(-1))
         {
-            logger.LogDebug("Getting token from cache");
+            logger.LogDebug("Using cached Authentik token for provider {ProviderName}; token expires at {TokenExpiresAt}", provider.Name, token.ExpiresAt);
             return token.Token;
         }
 
-        logger.LogDebug("Continue getting token from Authentik api");
+        logger.LogDebug("Requesting new Authentik token for provider {ProviderName}", provider.Name);
 
         var endpoint = string.Empty;
 
@@ -50,6 +50,7 @@ public class AuthentikAuthenticationService(
                 .ReceiveJson<AuthentikAuthenticationResponseBody>();
 
             _tokens[provider.Name] = new AuthentikToken(result.access_token, DateTime.UtcNow.AddSeconds(result.expires_in - 60));
+            logger.LogDebug("Cached Authentik token for provider {ProviderName}; token expires in {TokenExpiresInSeconds} seconds", provider.Name, result.expires_in);
             return result.access_token;
         }
         catch (FlurlHttpTimeoutException ex)

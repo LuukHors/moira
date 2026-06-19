@@ -41,14 +41,14 @@ public class GroupResultHandler(
             "Group is not being deleted.");
 
         await client.UpdateStatusAsync(entity, cancellationToken);
+        logger.LogDebug("Updated group status after successful reconcile with group id {GroupId}", idpEntity.Status.GroupId);
         
         entityRequeue(entity, TimeSpan.FromSeconds(20));
+        logger.LogDebug("Requeued group after successful reconcile with delay {RequeueDelaySeconds}", 20);
     }
 
     public async Task HandleExceptionAsync(Group entity, MoiraException exception, CancellationToken cancellationToken)
     {
-        logger.LogError(exception, "");
-        
         entity.Status.ObservedGeneration = entity.Metadata.Generation;
         entity.UpsertCondition(
             entity.Status.Conditions,
@@ -78,8 +78,10 @@ public class GroupResultHandler(
         }
 
         await client.UpdateStatusAsync(entity, cancellationToken);
+        logger.LogDebug("Updated group status after failed operation with reason {FailureReason}", exception.Reason);
         
         entityRequeue(entity, TimeSpan.FromSeconds(20));
+        logger.LogDebug("Requeued group after failed operation with delay {RequeueDelaySeconds}", 20);
     }
 
     public async Task HandleDeleteAsync(Group entity, IdPGroup idpEntity, CancellationToken cancellationToken)
@@ -101,6 +103,7 @@ public class GroupResultHandler(
             message);
 
         await client.UpdateStatusAsync(entity, cancellationToken);
+        logger.LogDebug("Updated group status after delete with reason {DeleteReason}", reason);
     }
 
     private static bool IsDeleting(Group entity)
