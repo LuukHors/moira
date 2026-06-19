@@ -35,34 +35,33 @@ public class AuthentikGroupHandler(
         return new IdPCommandResult<IdPGroup>(command.Id, command.Entity.CopyWithNewStatus(new IdPGroupStatus(
             result.pk!,
             result.name,
-            !string.IsNullOrEmpty(result.parent) ? [result.parent] : []
+            result.parents
         )));
     }
 
     public async Task<IdPCommandResult<IdPGroup>> UpdateAsync(AuthentikGroupV3 current, IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
     {
+        var group = await BuildAuthentikGroupAsync(command, cancellationToken);
         
-        if (!ShouldUpdate(current, command))
+        if (!ShouldUpdate(current, group))
         {
             logger.LogInformation("Group is already up-to-date");
             
             return new IdPCommandResult<IdPGroup>(command.Id, command.Entity.CopyWithNewStatus(new IdPGroupStatus(
                 current.pk ?? string.Empty,
                 current.name,
-                !string.IsNullOrEmpty(current.parent) ? [current.parent] : []
+                current.parents
             )));
         }
 
         logger.LogInformation("Group is not up-to-date, updating...");
-
-        var group = await BuildAuthentikGroupAsync(command, cancellationToken);
 
         var result = await httpClient.UpdateAsync(current.pk!, group, command.Entity.IdPProvider, cancellationToken);
 
         return new IdPCommandResult<IdPGroup>(command.Id, command.Entity.CopyWithNewStatus(new IdPGroupStatus(
             result.pk!,
             result.name,
-            !string.IsNullOrEmpty(result.parent) ? [result.parent] : []
+            result.parents
         )));
     }
 
@@ -84,39 +83,38 @@ public class AuthentikGroupHandler(
         return await httpClient.DeleteAsync(command.Entity.Status.GroupId, command.Entity.IdPProvider, cancellationToken);
     }
     
-    private static bool ShouldUpdate(AuthentikGroupV3 currentEntity, IdPCommand<IdPGroup> command)
+    private static bool ShouldUpdate(AuthentikGroupV3 currentEntity, AuthentikGroupV3 desiredEntity)
     {
-        var hasMemberOf = command.Entity.Spec.MemberOf.Any();
-        
-        if (!command.Entity.Spec.DisplayName.Equals(currentEntity.name))
+        if (!desiredEntity.name.Equals(currentEntity.name))
             return true;
 
-        if (hasMemberOf && string.IsNullOrEmpty(currentEntity.parent))
-            return true;
+        var desiredParentIds = desiredEntity.parents.ToHashSet();
+        var currentParentIds = currentEntity.parents.ToHashSet();
 
-        if (!hasMemberOf && !string.IsNullOrEmpty(currentEntity.parent))
-            return true;
-            
-        return !string.IsNullOrEmpty(command.Entity.Spec.MemberOf.FirstOrDefault()) 
-                    && !command.Entity.Status.MemberOfGroupIds.Contains(currentEntity.parent);
+        return !desiredParentIds.SetEquals(currentParentIds);
     }
     
     private async Task<AuthentikGroupV3> BuildAuthentikGroupAsync(IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
     {
-        var parentId = await ResolveParentIdAsync(command, cancellationToken);
-        return command.Entity.ToAuthentikGroup(parentId, _defaultAttributes);
+        var parentIds = await ResolveParentIdsAsync(command, cancellationToken);
+        return command.Entity.ToAuthentikGroup(parentIds, _defaultAttributes);
     }
 
-    private async Task<string> ResolveParentIdAsync(IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
+    private async Task<IEnumerable<string>> ResolveParentIdsAsync(IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
     {
-        var firstMemberOf = command.Entity.Spec.MemberOf.FirstOrDefault();
+        var memberOfNames = command.Entity.Spec.MemberOf
+            .Where(memberOf => !string.IsNullOrEmpty(memberOf))
+            .Distinct()
+            .ToList();
 
-        if (string.IsNullOrEmpty(firstMemberOf))
-            return string.Empty;
-        
-        var parent = await httpClient.GetByNameAsync(firstMemberOf, command.Entity.IdPProvider, null, cancellationToken)
-            ?? throw new IdPException($"Could not find parent group '{firstMemberOf}'", IdPExceptionReason.IdpValidationFailed);
-        
-        return parent.pk!;
+        var parentTasks = memberOfNames.Select(async memberOf =>
+        {
+            var parent = await httpClient.GetByNameAsync(memberOf, command.Entity.IdPProvider, null, cancellationToken)
+                ?? throw new IdPException($"Could not find parent group '{memberOf}'", IdPExceptionReason.IdpValidationFailed);
+
+            return parent.pk!;
+        });
+
+        return await Task.WhenAll(parentTasks);
     }
 }
