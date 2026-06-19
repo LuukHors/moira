@@ -10,14 +10,14 @@ public class ProviderRouter<TEntity> (
 {
     public Task<IProviderAdapter<TEntity>> ResolveAsync(string providerName, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Determining provider with name {providerName}", providerName);
+        logger.LogDebug("Resolving provider adapter {ProviderName}", providerName);
         var adapter = adapters.FirstOrDefault(
             provider =>
                 provider.Name.Equals(providerName, StringComparison.OrdinalIgnoreCase));
 
         if (adapter is null) throw new ProviderAdapterNotFoundException(providerName);
         
-        logger.LogDebug("Found provider with name \"{providerName}\"", providerName);
+        logger.LogDebug("Resolved provider adapter {ProviderName}", providerName);
         return Task.FromResult(adapter);
     }
 }

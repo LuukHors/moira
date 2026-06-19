@@ -16,7 +16,7 @@ public class GroupDependencyProvider(
 {
     public async Task<IdPGroup> ResolveAsync(Group entity, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Getting provider {providerNamespace}/{providerName} for group", entity.Spec.ProviderRef.Namespace, entity.Spec.ProviderRef.Name);
+        logger.LogDebug("Resolving provider {ProviderNamespace}/{ProviderName} for group", entity.Spec.ProviderRef.Namespace, entity.Spec.ProviderRef.Name);
         var provider = await client.GetAsync<Provider>(
             entity.Spec.ProviderRef.Name,
             entity.Spec.ProviderRef.Namespace, 
@@ -24,11 +24,12 @@ public class GroupDependencyProvider(
         
         if (provider is null)
         {
-            logger.LogDebug("Provider was not found...");
+            logger.LogDebug("Provider {ProviderNamespace}/{ProviderName} was not found", entity.Spec.ProviderRef.Namespace, entity.Spec.ProviderRef.Name);
             throw new ProviderNotFoundException(entity.Spec.ProviderRef.Namespace, entity.Spec.ProviderRef.Name);
         }
         
         var idPProvider = await providerDependencyProvider.ResolveAsync(provider, cancellationToken);
+        logger.LogDebug("Resolved provider {ProviderNamespace}/{ProviderName} for group", entity.Spec.ProviderRef.Namespace, entity.Spec.ProviderRef.Name);
         
         return new IdPGroup(
             entity.Namespace(),

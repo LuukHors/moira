@@ -6,6 +6,7 @@ using Moira.Common;
 using Moira.KubeOps;
 using Serilog;
 using Serilog.Events;
+using Serilog.Formatting.Compact;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -17,7 +18,8 @@ Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Override("System.Net.Http", LogEventLevel.Information)
     .MinimumLevel.Override("KubeOps.Operator", LogEventLevel.Information)    
     .MinimumLevel.Override("Moira", LogEventLevel.Debug)
-    .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss}][{Level:w3}][{RequestId}][{EntityType}][{EntityName}] {Message:lj}{NewLine}{Exception}")
+    .Enrich.FromLogContext()
+    .WriteTo.Console(new RenderedCompactJsonFormatter())
     .CreateLogger();
 
 builder.Services

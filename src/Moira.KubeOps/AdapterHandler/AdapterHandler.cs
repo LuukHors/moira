@@ -20,21 +20,23 @@ public class AdapterHandler<TK8SEntity, TEntity>(
 {
     public async Task HandleReconcileAsync(TK8SEntity entity, CancellationToken cancellationToken)
     {
-        var requestId = Guid.NewGuid();
+        var operationId = Guid.NewGuid();
         using var _ = logger.BeginScope(new Dictionary<string, object>
         {
-            { "RequestId", requestId },
-            { "EntityType", typeof(TEntity).Name },
-            { "EntityName", entity.Name() }
+            { "OperationId", operationId },
+            { "OperationType", "reconcile" },
+            { "EntityKind", typeof(TEntity).Name },
+            { "EntityName", entity.Name() },
+            { "EntityNamespace", entity.Namespace() }
         });
         
         try
         {
             logger.LogDebug("Starting reconcile loop");
 
-            logger.LogDebug("Executing pre-concile steps loop");
+            logger.LogDebug("Executing pre-reconcile steps");
             var entityModified = await preReconcileSteps.ExecuteAsync(entity, cancellationToken);
-            logger.LogDebug("Executed pre-concile steps loop");
+            logger.LogDebug("Executed pre-reconcile steps");
             
             logger.LogDebug("Determining if entity was modified");
             if (entityModified)
@@ -44,16 +46,16 @@ public class AdapterHandler<TK8SEntity, TEntity>(
             }
             logger.LogDebug("Entity was not modified");
             
-            logger.LogDebug("Getting dependencies...");
+            logger.LogDebug("Resolving dependencies");
             var idPEntity = await dependencyProvider.ResolveAsync(entity, cancellationToken);
             var provider = await providerRouter.ResolveAsync(GetProviderType(idPEntity), cancellationToken);
-            logger.LogDebug("Received dependencies...");
+            logger.LogDebug("Resolved dependencies for provider {ProviderName}", provider.Name);
             
-            var command = new IdPCommand<TEntity>(requestId, idPEntity);
+            var command = new IdPCommand<TEntity>(operationId, idPEntity);
 
-            logger.LogDebug("Sending reconcile command to provider {providerName}", provider.Name);
+            logger.LogDebug("Sending reconcile command to provider {ProviderName}", provider.Name);
             var result = await provider.ExecuteReconcileAsync(command, cancellationToken);
-            logger.LogDebug("Received result from provider {providerName}, handling result..", provider.Name);
+            logger.LogDebug("Received reconcile result from provider {ProviderName}", provider.Name);
 
             await resultHandler.HandleAsync(entity, result.Entity, cancellationToken);
             
@@ -61,49 +63,55 @@ public class AdapterHandler<TK8SEntity, TEntity>(
         }
         catch (MoiraException ex)
         {
+            logger.LogError(ex, "Reconcile operation failed with reason {FailureReason}", ex.Reason);
             await resultHandler.HandleExceptionAsync(entity, ex, cancellationToken);
         }
         catch (Exception ex)
         {
+            logger.LogError(ex, "Unexpected reconcile operation failed");
             await resultHandler.HandleExceptionAsync(entity, new UnknownMoiraException("Unexpected reconciliation error.", ex), cancellationToken);
         }
     }
 
     public async Task HandleDeleteAsync(TK8SEntity entity, CancellationToken cancellationToken)
     {
-        var requestId = Guid.NewGuid();
+        var operationId = Guid.NewGuid();
         using var _ = logger.BeginScope(new Dictionary<string, object>
         {
-            { "RequestId", requestId },
-            { "EntityType", typeof(TEntity).Name },
-            { "EntityName", entity.Name() }
+            { "OperationId", operationId },
+            { "OperationType", "delete" },
+            { "EntityKind", typeof(TEntity).Name },
+            { "EntityName", entity.Name() },
+            { "EntityNamespace", entity.Namespace() }
         });
 
         try
         {
             logger.LogDebug("Starting delete");
             
-            logger.LogDebug("Getting dependencies...");
+            logger.LogDebug("Resolving dependencies");
             var idPEntity = await dependencyProvider.ResolveAsync(entity, cancellationToken);
             var provider = await providerRouter.ResolveAsync(GetProviderType(idPEntity), cancellationToken);
-            logger.LogDebug("Received dependencies...");
+            logger.LogDebug("Resolved dependencies for provider {ProviderName}", provider.Name);
 
-            var command = new IdPCommand<TEntity>(requestId, idPEntity);
+            var command = new IdPCommand<TEntity>(operationId, idPEntity);
             
-            logger.LogDebug("Sending delete command to provider {providerName}", provider.Name);
+            logger.LogDebug("Sending delete command to provider {ProviderName}", provider.Name);
             var entityDeleted = await provider.ExecuteDeleteAsync(command, cancellationToken);
-            logger.LogDebug("Got result from provider {providerName}", provider.Name);
+            logger.LogDebug("Received delete result from provider {ProviderName}", provider.Name);
 
             await resultHandler.HandleDeleteAsync(entity, idPEntity, cancellationToken);
 
-            if (entityDeleted) logger.LogInformation("Entity has been deleted");
+            if (entityDeleted) logger.LogInformation("Entity was deleted");
         }
         catch (MoiraException ex)
         {
+            logger.LogError(ex, "Delete operation failed with reason {FailureReason}", ex.Reason);
             await resultHandler.HandleExceptionAsync(entity, ex, cancellationToken);
         }
         catch (Exception ex)
         {
+            logger.LogError(ex, "Unexpected delete operation failed");
             await resultHandler.HandleExceptionAsync(entity, new UnknownMoiraException("Unexpected deletion error.", ex), cancellationToken);
         }
     }

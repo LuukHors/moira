@@ -31,14 +31,14 @@ public class ProviderResultHandler(
             "Referenced credentials were resolved.");
 
         await client.UpdateStatusAsync(entity, cancellationToken);
+        logger.LogDebug("Updated provider status after successful provider check");
         
         entityRequeue(entity, TimeSpan.FromSeconds(20));
+        logger.LogDebug("Requeued provider after successful provider check with delay {RequeueDelaySeconds}", 20);
     }
 
     public async Task HandleExceptionAsync(Provider entity, MoiraException exception, CancellationToken cancellationToken)
     {
-        logger.LogError(exception, "");
-
         entity.Status.ObservedGeneration = entity.Metadata.Generation;
         entity.UpsertCondition(
             entity.Status.Conditions,
@@ -67,8 +67,10 @@ public class ProviderResultHandler(
         }
 
         await client.UpdateStatusAsync(entity, cancellationToken);
+        logger.LogDebug("Updated provider status after failed operation with reason {FailureReason}", exception.Reason);
         
         entityRequeue(entity, TimeSpan.FromSeconds(20));
+        logger.LogDebug("Requeued provider after failed operation with delay {RequeueDelaySeconds}", 20);
     }
 
     public async Task HandleDeleteAsync(Provider entity, IdPProvider idpEntity, CancellationToken cancellationToken)
@@ -82,5 +84,6 @@ public class ProviderResultHandler(
             "Provider is being deleted.");
 
         await client.UpdateStatusAsync(entity, cancellationToken);
+        logger.LogDebug("Updated provider status after delete");
     }
 }

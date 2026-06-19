@@ -14,12 +14,12 @@ public class ProviderDependencyProvider(
 {
     public async Task<IdPProvider> ResolveAsync(Provider entity, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Getting secret {secretNamespace}/{secretName} for provider {providerName}", entity.Spec.SecretRef.NamespaceProperty, entity.Spec.SecretRef.Name, entity.Name());
+        logger.LogDebug("Resolving secret {SecretNamespace}/{SecretName} for provider {ProviderName}", entity.Spec.SecretRef.NamespaceProperty, entity.Spec.SecretRef.Name, entity.Name());
         
         var secret = await client.GetAsync<V1Secret>(entity.Spec.SecretRef.Name, entity.Spec.SecretRef.NamespaceProperty, cancellationToken) 
                      ?? throw new SecretNotFoundException(entity.Spec.SecretRef.NamespaceProperty, entity.Spec.SecretRef.Name);
         
-        logger.LogDebug("Received secret {secretNamespace}/{secretName} for provider {providerName}, Decoding secret values...", entity.Spec.SecretRef.NamespaceProperty, entity.Spec.SecretRef.Name, entity.Name());
+        logger.LogDebug("Resolved secret {SecretNamespace}/{SecretName} for provider {ProviderName}, decoding secret values", entity.Spec.SecretRef.NamespaceProperty, entity.Spec.SecretRef.Name, entity.Name());
 
         var gotClientIdFromSecret = secret.Data.TryGetValue("ClientId", out var clientIdByteArray);
         var gotClientSecretFromSecret = secret.Data.TryGetValue("ClientSecret", out var clientSecretByteArray);
@@ -41,7 +41,7 @@ public class ProviderDependencyProvider(
         var clientId = Encoding.UTF8.GetString(clientIdByteArray);
         var clientSecret = Encoding.UTF8.GetString(clientSecretByteArray);
         
-        logger.LogDebug("Got secret values, returning IdPProvider");
+        logger.LogDebug("Decoded provider secret values for provider {ProviderName}", entity.Name());
 
         return new IdPProvider(
             entity.Namespace(),
