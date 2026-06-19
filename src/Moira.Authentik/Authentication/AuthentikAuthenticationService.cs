@@ -1,7 +1,4 @@
 using System.Net;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using System.Xml.XPath;
 using Flurl;
 using Flurl.Http;
 using Microsoft.Extensions.Logging;
@@ -66,6 +63,16 @@ public class AuthentikAuthenticationService(
         catch (FlurlHttpException ex)
         {
             var message = await ex.GetResponseStringAsync();
+            if (IsCredentialFailure(ex.StatusCode, message))
+            {
+                throw new IdPException(
+                    string.IsNullOrWhiteSpace(message)
+                        ? "Authentik credentials could not be used to acquire an API token."
+                        : message,
+                    IdPExceptionReason.IdpValidationFailed,
+                    ex);
+            }
+
             throw new IdPHttpException(message, null, "POST", endpoint, ex.StatusCode, ex);
         }
     }
@@ -73,5 +80,11 @@ public class AuthentikAuthenticationService(
     public bool InvalidateCachedToken(string providerName)
     {
         return _tokens.Remove(providerName);
+    }
+
+    private static bool IsCredentialFailure(int? statusCode, string message)
+    {
+        return statusCode is 400 or 401 or 403
+               && message.Contains("invalid_client", StringComparison.OrdinalIgnoreCase);
     }
 }

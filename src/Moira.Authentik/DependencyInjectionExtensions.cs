@@ -5,6 +5,7 @@ using Moira.Authentik.Handlers;
 using Moira.Authentik.HttpService;
 using Moira.Authentik.HttpService.Routes;
 using Moira.Authentik.ProviderAdapters;
+using Moira.Authentik.ProviderCheck;
 using Moira.Common.Models;
 using Moira.Common.Provider;
 
@@ -17,6 +18,7 @@ public static class DependencyInjectionExtensions
         var assembly = Assembly.GetExecutingAssembly();
         
         services.AddSingleton<IAuthentikAuthenticationService, AuthentikAuthenticationService>();
+        services.AddScoped<IAuthentikProviderCheckService, AuthentikProviderCheckService>();
         
         return services.Scan(scan => scan
             .FromAssemblies(assembly)
