@@ -1,5 +1,6 @@
 using Moira.Common.Models;
 using Microsoft.Extensions.Logging;
+using Moira.Common.Exceptions;
 
 namespace Moira.Common.Provider;
 
@@ -14,7 +15,7 @@ public class ProviderRouter<TEntity> (
             provider =>
                 provider.Name.Equals(providerName, StringComparison.OrdinalIgnoreCase));
 
-        if (adapter is null) throw new InvalidOperationException($"No adapter with name \"{providerName}\" found.");
+        if (adapter is null) throw new ProviderAdapterNotFoundException(providerName);
         
         logger.LogDebug("Found provider with name \"{providerName}\"", providerName);
         return Task.FromResult(adapter);

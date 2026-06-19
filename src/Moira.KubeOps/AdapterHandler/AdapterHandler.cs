@@ -6,7 +6,6 @@ using Moira.Common.Exceptions;
 using Moira.Common.Models;
 using Moira.Common.Provider;
 using Moira.KubeOps.DependencyProvider;
-using Moira.KubeOps.Mappers;
 using Moira.KubeOps.PreReconcileSteps;
 using Moira.KubeOps.ResultHandler;
 
@@ -60,20 +59,13 @@ public class AdapterHandler<TK8SEntity, TEntity>(
             
             logger.LogDebug("Completed reconcile loop");
         }
-        catch (InvalidOperationException ex)
+        catch (MoiraException ex)
         {
-            var idpEx = ex.ToIdPException();
-            await resultHandler.HandleExceptionAsync(entity, idpEx, cancellationToken);
-        }
-        catch (HttpException ex)
-        {
-            var idpEx = ex.ToIdPException();
-            await resultHandler.HandleExceptionAsync(entity, idpEx, cancellationToken);
+            await resultHandler.HandleExceptionAsync(entity, ex, cancellationToken);
         }
         catch (Exception ex)
         {
-            var idpEx = ex.ToIdPException();
-            await resultHandler.HandleExceptionAsync(entity, idpEx, cancellationToken);
+            await resultHandler.HandleExceptionAsync(entity, new UnknownMoiraException("Unexpected reconciliation error.", ex), cancellationToken);
         }
     }
 
@@ -106,20 +98,13 @@ public class AdapterHandler<TK8SEntity, TEntity>(
 
             if (entityDeleted) logger.LogInformation("Entity has been deleted");
         }
-        catch (InvalidOperationException ex)
+        catch (MoiraException ex)
         {
-            var idpEx = ex.ToIdPException();
-            await resultHandler.HandleExceptionAsync(entity, idpEx, cancellationToken);
-        }
-        catch (HttpException ex)
-        {
-            var idpEx = ex.ToIdPException();
-            await resultHandler.HandleExceptionAsync(entity, idpEx, cancellationToken);
+            await resultHandler.HandleExceptionAsync(entity, ex, cancellationToken);
         }
         catch (Exception ex)
         {
-            var idpEx = ex.ToIdPException();
-            await resultHandler.HandleExceptionAsync(entity, idpEx, cancellationToken);
+            await resultHandler.HandleExceptionAsync(entity, new UnknownMoiraException("Unexpected deletion error.", ex), cancellationToken);
         }
     }
 
@@ -129,7 +114,7 @@ public class AdapterHandler<TK8SEntity, TEntity>(
         {
             IdPEntity idPEntity => idPEntity.IdPProvider.Type,
             IdPProvider idPProvider => idPProvider.Type,
-            _ => throw new InvalidOperationException($"Unable to determine provider type for entity {typeof(TEntity).Name}")
+            _ => throw new UnsupportedProviderException(typeof(TEntity).Name)
         };
     }
 }

@@ -54,12 +54,18 @@ public class AuthentikAuthenticationService(
         }
         catch (FlurlHttpTimeoutException ex)
         {
-            throw new HttpException("Request was not able to be completed within 10 seconds", HttpStatusCode.RequestTimeout, "POST", string.Empty);
+            throw new IdPHttpException(
+                "Request was not able to be completed within 10 seconds",
+                HttpStatusCode.RequestTimeout,
+                "POST",
+                endpoint,
+                (int)HttpStatusCode.RequestTimeout,
+                ex);
         }
         catch (FlurlHttpException ex)
         {
             var message = await ex.GetResponseStringAsync();
-            throw new HttpException(message, null, "POST", endpoint, ex.StatusCode);
+            throw new IdPHttpException(message, null, "POST", endpoint, ex.StatusCode, ex);
         }
     }
 

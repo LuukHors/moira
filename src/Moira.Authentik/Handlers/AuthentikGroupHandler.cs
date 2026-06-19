@@ -4,6 +4,7 @@ using Moira.Common.Commands;
 using Moira.Common.Models;
 using Moira.Authentik.HttpService;
 using Moira.Authentik.Models.Mappers;
+using Moira.Common.Exceptions;
 using Moira.Common.Mappers;
 
 namespace Moira.Authentik.Handlers;
@@ -114,7 +115,7 @@ public class AuthentikGroupHandler(
             return string.Empty;
         
         var parent = await httpClient.GetByNameAsync(firstMemberOf, command.Entity.IdPProvider, null, cancellationToken)
-            ?? throw new InvalidOperationException($"Could not find parent group '{firstMemberOf}'");
+            ?? throw new IdPException($"Could not find parent group '{firstMemberOf}'", IdPExceptionReason.IdpValidationFailed);
         
         return parent.pk!;
     }
