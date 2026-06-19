@@ -1,3 +1,4 @@
+using KubeOps.Abstractions.Queue;
 using KubeOps.KubernetesClient;
 using Microsoft.Extensions.Logging;
 using Moira.Common.Exceptions;
@@ -10,6 +11,7 @@ namespace Moira.KubeOps.ResultHandler;
 
 public class ProviderResultHandler(
     IKubernetesClient client,
+    EntityRequeue<Provider> entityRequeue,
     ILogger<ProviderResultHandler> logger) : IResultHandler<Provider, IdPProvider>
 {
     public async Task HandleAsync(Provider entity, IdPProvider idpEntity, CancellationToken cancellationToken)
@@ -29,6 +31,8 @@ public class ProviderResultHandler(
             "Referenced credentials were resolved.");
 
         await client.UpdateStatusAsync(entity, cancellationToken);
+        
+        entityRequeue(entity, TimeSpan.FromSeconds(20));
     }
 
     public async Task HandleExceptionAsync(Provider entity, MoiraException exception, CancellationToken cancellationToken)
@@ -63,6 +67,8 @@ public class ProviderResultHandler(
         }
 
         await client.UpdateStatusAsync(entity, cancellationToken);
+        
+        entityRequeue(entity, TimeSpan.FromSeconds(20));
     }
 
     public async Task HandleDeleteAsync(Provider entity, IdPProvider idpEntity, CancellationToken cancellationToken)
