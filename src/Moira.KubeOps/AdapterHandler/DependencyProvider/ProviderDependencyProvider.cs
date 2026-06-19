@@ -2,6 +2,7 @@ using System.Text;
 using k8s.Models;
 using KubeOps.KubernetesClient;
 using Microsoft.Extensions.Logging;
+using Moira.Common.Exceptions;
 using Moira.Common.Models;
 using Moira.KubeOps.Entities;
 
@@ -16,7 +17,7 @@ public class ProviderDependencyProvider(
         logger.LogDebug("Getting secret {secretNamespace}/{secretName} for provider {providerName}", entity.Spec.SecretRef.NamespaceProperty, entity.Spec.SecretRef.Name, entity.Name());
         
         var secret = await client.GetAsync<V1Secret>(entity.Spec.SecretRef.Name, entity.Spec.SecretRef.NamespaceProperty, cancellationToken) 
-                     ?? throw new InvalidOperationException($"Could not get secret {entity.Spec.SecretRef.NamespaceProperty}/{entity.Spec.SecretRef.Name}");
+                     ?? throw new SecretNotFoundException(entity.Spec.SecretRef.NamespaceProperty, entity.Spec.SecretRef.Name);
         
         logger.LogDebug("Received secret {secretNamespace}/{secretName} for provider {providerName}, Decoding secret values...", entity.Spec.SecretRef.NamespaceProperty, entity.Spec.SecretRef.Name, entity.Name());
 
@@ -25,7 +26,16 @@ public class ProviderDependencyProvider(
 
         if (!gotClientIdFromSecret || !gotClientSecretFromSecret || clientIdByteArray is null || clientSecretByteArray is null)
         {
-            throw new InvalidOperationException($"Could not get key/value ClientId or ClientSecret from secret {entity.Spec.SecretRef.NamespaceProperty}/{entity.Spec.SecretRef.Name}");
+            (bool Found, string Name)[] secretKeys =
+            [
+                (gotClientIdFromSecret && clientIdByteArray is not null, "ClientId"),
+                (gotClientSecretFromSecret && clientSecretByteArray is not null, "ClientSecret")
+            ];
+            var missingKeys = secretKeys
+                .Where(key => !key.Found)
+                .Select(key => key.Name);
+
+            throw new SecretKeyMissingException(entity.Spec.SecretRef.NamespaceProperty, entity.Spec.SecretRef.Name, missingKeys);
         }
         
         var clientId = Encoding.UTF8.GetString(clientIdByteArray);

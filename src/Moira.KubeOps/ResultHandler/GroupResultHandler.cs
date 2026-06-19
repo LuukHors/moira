@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Moira.Common.Exceptions;
 using Moira.Common.Models;
 using Moira.KubeOps.Entities;
+using Moira.KubeOps.Mappers;
 using Moira.KubeOps.Status;
 
 namespace Moira.KubeOps.ResultHandler;
@@ -44,7 +45,7 @@ public class GroupResultHandler(
         entityRequeue(entity, TimeSpan.FromSeconds(20));
     }
 
-    public async Task HandleExceptionAsync(Group entity, IdPException exception, CancellationToken cancellationToken)
+    public async Task HandleExceptionAsync(Group entity, MoiraException exception, CancellationToken cancellationToken)
     {
         logger.LogError(exception, "");
         
@@ -53,16 +54,16 @@ public class GroupResultHandler(
             entity.Status.Conditions,
             ConditionTypes.Ready,
             ConditionStatus.False,
-            ConditionReasons.ReconcileFailed,
+            exception.ToReconcileFailureReason(),
             exception.Message);
 
-        if (IsDependencyFailure(exception))
+        if (exception is DependencyException)
         {
             entity.UpsertCondition(
                 entity.Status.Conditions,
                 ConditionTypes.DependenciesReady,
                 ConditionStatus.False,
-                ConditionReasons.DependencyMissing,
+                exception.ToDependencyFailureReason(),
                 exception.Message);
         }
 
@@ -100,20 +101,6 @@ public class GroupResultHandler(
             message);
 
         await client.UpdateStatusAsync(entity, cancellationToken);
-    }
-
-    private static bool IsDependencyFailure(IdPException exception)
-    {
-        if (exception.Type is not IdpExceptionType.Logical)
-        {
-            return false;
-        }
-
-        return exception.Message.Contains("provider", StringComparison.OrdinalIgnoreCase)
-               || exception.Message.Contains("secret", StringComparison.OrdinalIgnoreCase)
-               || exception.Message.Contains("ClientId", StringComparison.OrdinalIgnoreCase)
-               || exception.Message.Contains("ClientSecret", StringComparison.OrdinalIgnoreCase)
-               || exception.Message.Contains("No adapter", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsDeleting(Group entity)

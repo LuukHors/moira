@@ -11,7 +11,7 @@ public class OidcApplicationResultHandler : IResultHandler<OidcApplication, IdPO
         throw new NotImplementedException();
     }
 
-    public Task HandleExceptionAsync(OidcApplication entity, IdPException exception, CancellationToken cancellationToken)
+    public Task HandleExceptionAsync(OidcApplication entity, MoiraException exception, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }

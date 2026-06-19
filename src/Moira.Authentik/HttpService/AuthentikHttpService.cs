@@ -114,9 +114,9 @@ public class AuthentikHttpService<TModel, TModelWrite, TId>(
             .WithHeader("Accept", "application/json");
     }
 
-    private static async Task<HttpException> WrapAsync(FlurlHttpException ex, string verb, string path)
+    private static async Task<IdPHttpException> WrapAsync(FlurlHttpException ex, string verb, string path)
     {
         var body = await ex.GetResponseStringAsync();
-        return new HttpException(body, null, verb, path, ex.StatusCode);
+        return new IdPHttpException(body, null, verb, path, ex.StatusCode, ex);
     }
 }

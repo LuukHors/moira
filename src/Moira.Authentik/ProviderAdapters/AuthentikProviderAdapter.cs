@@ -1,5 +1,6 @@
 using Moira.Authentik.Authentication;
 using Moira.Common.Commands;
+using Moira.Common.Exceptions;
 using Moira.Common.Models;
 using Moira.Common.Provider;
 
@@ -12,7 +13,7 @@ public class AuthentikProviderAdapter(
     {
         if (string.IsNullOrWhiteSpace(command.Entity.BaseUrl))
         {
-            throw new InvalidOperationException("Provider baseUrl should not be empty.");
+            throw new IdPException("Provider baseUrl should not be empty.", IdPExceptionReason.IdpValidationFailed);
         }
 
         await authenticationService.AcquireTokenAsync(command.Entity, cancellationToken);

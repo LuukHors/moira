@@ -1,6 +1,7 @@
 using k8s.Models;
 using KubeOps.KubernetesClient;
 using Microsoft.Extensions.Logging;
+using Moira.Common.Exceptions;
 using Moira.Common.Models;
 using Moira.KubeOps.DependencyProvider;
 using Moira.KubeOps.Entities;
@@ -24,7 +25,7 @@ public class GroupDependencyProvider(
         if (provider is null)
         {
             logger.LogDebug("Provider was not found...");
-            throw new InvalidOperationException($"Unable to get provider with name \"{entity.Spec.ProviderRef.Name}\" in namespace \"{entity.Spec.ProviderRef.Namespace}\"");
+            throw new ProviderNotFoundException(entity.Spec.ProviderRef.Namespace, entity.Spec.ProviderRef.Name);
         }
         
         var idPProvider = await providerDependencyProvider.ResolveAsync(provider, cancellationToken);

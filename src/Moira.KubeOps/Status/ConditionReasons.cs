@@ -6,6 +6,12 @@ public static class ConditionReasons
     public const string ReconcileFailed = "ReconcileFailed";
     public const string DependenciesResolved = "DependenciesResolved";
     public const string DependencyMissing = "DependencyMissing";
+    public const string SecretMissing = "SecretMissing";
+    public const string SecretKeyMissing = "SecretKeyMissing";
+    public const string ProviderMissing = "ProviderMissing";
+    public const string ProviderAdapterMissing = "ProviderAdapterMissing";
+    public const string IdpRequestFailed = "IdpRequestFailed";
+    public const string IdpValidationFailed = "IdpValidationFailed";
     public const string DeleteStarted = "DeleteStarted";
     public const string DeleteSucceeded = "DeleteSucceeded";
     public const string DeleteSkipped = "DeleteSkipped";
