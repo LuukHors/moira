@@ -4,7 +4,7 @@ namespace Moira.KubeOps.Entities.Validators;
 
 internal class GroupValidator : AbstractValidator<Group>
 {
-    internal GroupValidator()
+    public GroupValidator()
     {
         RuleFor(g => g.Spec.ProviderRef)
             .NotNull()
