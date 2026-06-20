@@ -3,7 +3,6 @@ using KubeOps.KubernetesClient;
 using Microsoft.Extensions.Logging;
 using Moira.Common.Exceptions;
 using Moira.Common.Models;
-using Moira.KubeOps.DependencyProvider;
 using Moira.KubeOps.Entities;
 using Provider = Moira.KubeOps.Entities.Provider;
 

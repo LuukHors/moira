@@ -5,7 +5,7 @@ using Moira.Common.Commands;
 using Moira.Common.Exceptions;
 using Moira.Common.Models;
 using Moira.Common.Provider;
-using Moira.KubeOps.DependencyProvider;
+using Moira.KubeOps.AdapterHandler.DependencyProvider;
 using Moira.KubeOps.PreReconcileSteps;
 using Moira.KubeOps.ResultHandler;
 

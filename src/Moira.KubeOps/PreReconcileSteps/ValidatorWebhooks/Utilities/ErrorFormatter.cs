@@ -1,7 +1,7 @@
 ﻿using FluentValidation;
 using System.Text;
 
-namespace Moira.KubeOps.ValidatorWebhooks.Utilities;
+namespace Moira.KubeOps.PreReconcileSteps.ValidatorWebhooks.Utilities;
 
 internal static class ErrorFormatter
 {

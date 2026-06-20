@@ -2,11 +2,11 @@ using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Moira.Common.Models;
 using Moira.KubeOps.AdapterHandler;
-using Moira.KubeOps.DependencyProvider;
+using Moira.KubeOps.AdapterHandler.DependencyProvider;
 using Moira.KubeOps.Entities;
 using Moira.KubeOps.PreReconcileSteps;
 using Moira.KubeOps.ResultHandler;
-using Moira.KubeOps.ValidatorWebhooks.Executor;
+using Moira.KubeOps.PreReconcileSteps.ValidatorWebhooks.Executor;
 
 namespace Moira.KubeOps;
 

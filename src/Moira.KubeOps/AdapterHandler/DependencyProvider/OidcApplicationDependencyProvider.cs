@@ -8,7 +8,7 @@ using Moira.KubeOps.Entities;
 using Moira.KubeOps.Secrets;
 using Provider = Moira.KubeOps.Entities.Provider;
 
-namespace Moira.KubeOps.DependencyProvider;
+namespace Moira.KubeOps.AdapterHandler.DependencyProvider;
 
 public class OidcApplicationDependencyProvider(
     IKubernetesClient client,
@@ -29,10 +29,19 @@ public class OidcApplicationDependencyProvider(
 
         if (provider is null)
         {
+            logger.LogDebug(
+                "Provider {ProviderNamespace}/{ProviderName} was not found",
+                entity.Spec.ProviderRef.Namespace,
+                entity.Spec.ProviderRef.Name);
             throw new ProviderNotFoundException(entity.Spec.ProviderRef.Namespace, entity.Spec.ProviderRef.Name);
         }
 
         var idPProvider = await providerDependencyProvider.ResolveAsync(provider, cancellationToken);
+        logger.LogDebug(
+            "Resolved provider {ProviderNamespace}/{ProviderName} for OIDC application",
+            entity.Spec.ProviderRef.Namespace,
+            entity.Spec.ProviderRef.Name);
+
         var sourceSecret = await client.GetAsync<V1Secret>(
             OidcSecretNames.SourceSecretName(entity),
             entity.Namespace(),

@@ -1,7 +1,7 @@
 using KubeOps.Abstractions.Entities;
 using Moira.Common.Models;
 
-namespace Moira.KubeOps.DependencyProvider;
+namespace Moira.KubeOps.AdapterHandler.DependencyProvider;
 
 public interface IDependencyProvider<in TK8SEntity, TResult> where TK8SEntity : CustomKubernetesEntity where TResult : IdPEntityBase
 {

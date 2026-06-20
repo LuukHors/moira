@@ -6,7 +6,7 @@ using Moira.Common.Exceptions;
 using Moira.Common.Models;
 using Moira.KubeOps.Entities;
 
-namespace Moira.KubeOps.DependencyProvider;
+namespace Moira.KubeOps.AdapterHandler.DependencyProvider;
 
 public class ProviderDependencyProvider(
     IKubernetesClient client,
