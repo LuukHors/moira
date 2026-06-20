@@ -4,7 +4,7 @@ namespace Moira.KubeOps.Entities.Validators;
 
 internal class OIDCApplicationValidator : AbstractValidator<OidcApplication>
 {
-    internal OIDCApplicationValidator()
+    public OIDCApplicationValidator()
     {
         RuleFor(a => a.Spec.DisplayName)
             .NotEmpty()
