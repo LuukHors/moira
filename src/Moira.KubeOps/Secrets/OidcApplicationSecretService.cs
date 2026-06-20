@@ -1,8 +1,4 @@
-using System.Text;
-using k8s;
-using k8s.Autorest;
 using k8s.Models;
-using KubeOps.KubernetesClient;
 using Microsoft.Extensions.Logging;
 using Moira.Common.Models;
 using Moira.KubeOps.Entities;
@@ -10,7 +6,7 @@ using Moira.KubeOps.Entities;
 namespace Moira.KubeOps.Secrets;
 
 public class OidcApplicationSecretService(
-    IKubernetesClient client,
+    ISecretService secretService,
     ILogger<OidcApplicationSecretService> logger) : IOidcApplicationSecretService
 {
     private const string ClientIdKey = "clientId";
@@ -21,65 +17,24 @@ public class OidcApplicationSecretService(
         IdPOidcApplication idpEntity,
         CancellationToken cancellationToken)
     {
-        await UpsertLocalSecretAsync(
-            OidcSecretNames.SourceSecretName(entity),
-            entity.Namespace(),
-            "Opaque",
-            new Dictionary<string, string>(),
-            new Dictionary<string, string>
-            {
-                ["moira.operator/managed"] = "true",
-                ["moira.operator/oidc-application"] = entity.Name()
-            },
-            ClientIdKey,
-            ClientSecretKey,
-            idpEntity.Status.ClientId,
-            idpEntity.ClientSecret,
-            cancellationToken);
+        await secretService.SyncAsync(SourceTarget(entity, idpEntity), cancellationToken);
 
         var statuses = new List<OidcApplication.SecretTargetStatus>();
         foreach (var target in entity.Spec.SecretTargets)
         {
-            var status = TargetStatus(target);
             try
             {
-                var targetNamespace = string.IsNullOrWhiteSpace(target.Namespace) ? entity.Namespace() : target.Namespace;
-                if (target.ClusterRef is null)
-                {
-                    await UpsertLocalSecretAsync(
-                        target.Name,
-                        targetNamespace,
-                        target.Type,
-                        target.Annotations,
-                        target.Labels,
-                        target.Keys.ClientId,
-                        target.Keys.ClientSecret,
-                        idpEntity.Status.ClientId,
-                        idpEntity.ClientSecret,
-                        cancellationToken);
-                }
-                else
-                {
-                    await UpsertRemoteSecretAsync(
-                        target,
-                        targetNamespace,
-                        idpEntity.Status.ClientId,
-                        idpEntity.ClientSecret,
-                        cancellationToken);
-                }
+                var genericStatus = await secretService.SyncAsync(
+                    ToSecretTarget(entity, target, idpEntity),
+                    cancellationToken);
 
-                status.Synced = true;
-                status.LastSyncedAt = DateTime.UtcNow;
-                status.Message = "Secret synced.";
+                statuses.Add(ToOidcStatus(genericStatus));
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to sync OIDC application secret target {SecretNamespace}/{SecretName}", target.Namespace, target.Name);
-                status.Synced = false;
-                status.Message = ex.Message;
+                statuses.Add(ToFailedOidcStatus(target, ex));
             }
-
-            statuses.Add(status);
         }
 
         return statuses;
@@ -87,151 +42,93 @@ public class OidcApplicationSecretService(
 
     public async Task DeleteAsync(OidcApplication entity, CancellationToken cancellationToken)
     {
-        await DeleteLocalSecretAsync(OidcSecretNames.SourceSecretName(entity), entity.Namespace(), cancellationToken);
+        await secretService.DeleteAsync(SourceTarget(entity), cancellationToken);
 
         foreach (var target in entity.Spec.SecretTargets)
         {
-            var targetNamespace = string.IsNullOrWhiteSpace(target.Namespace) ? entity.Namespace() : target.Namespace;
-            if (target.ClusterRef is null)
+            await secretService.DeleteAsync(ToSecretTarget(entity, target), cancellationToken);
+        }
+    }
+
+    private static SecretTarget SourceTarget(OidcApplication entity, IdPOidcApplication? idpEntity = null)
+    {
+        return new SecretTarget
+        {
+            Name = OidcSecretNames.SourceSecretName(entity),
+            Namespace = entity.Namespace(),
+            Type = "Opaque",
+            Labels = new Dictionary<string, string>
             {
-                await DeleteLocalSecretAsync(target.Name, targetNamespace, cancellationToken);
-                continue;
-            }
-
-            await DeleteRemoteSecretAsync(target, targetNamespace, cancellationToken);
-        }
-    }
-
-    private async Task UpsertLocalSecretAsync(
-        string name,
-        string @namespace,
-        string type,
-        IDictionary<string, string> annotations,
-        IDictionary<string, string> labels,
-        string clientIdKey,
-        string clientSecretKey,
-        string clientId,
-        string clientSecret,
-        CancellationToken cancellationToken)
-    {
-        var secret = BuildSecret(name, @namespace, type, annotations, labels, clientIdKey, clientSecretKey, clientId, clientSecret);
-        var existing = await client.GetAsync<V1Secret>(name, @namespace, cancellationToken);
-        if (existing is null)
-        {
-            await client.CreateAsync(secret, cancellationToken);
-            return;
-        }
-
-        secret.Metadata.ResourceVersion = existing.Metadata.ResourceVersion;
-        await client.UpdateAsync(secret, cancellationToken);
-    }
-
-    private async Task UpsertRemoteSecretAsync(
-        OidcApplication.SecretTarget target,
-        string targetNamespace,
-        string clientId,
-        string clientSecret,
-        CancellationToken cancellationToken)
-    {
-        using var remoteClient = await BuildRemoteClientAsync(target.ClusterRef!.KubeConfigSecretRef, cancellationToken);
-        var secret = BuildSecret(
-            target.Name,
-            targetNamespace,
-            target.Type,
-            target.Annotations,
-            target.Labels,
-            target.Keys.ClientId,
-            target.Keys.ClientSecret,
-            clientId,
-            clientSecret);
-
-        try
-        {
-            var existing = await remoteClient.ReadNamespacedSecretAsync(target.Name, targetNamespace, cancellationToken: cancellationToken);
-            secret.Metadata.ResourceVersion = existing.Metadata.ResourceVersion;
-            await remoteClient.ReplaceNamespacedSecretAsync(secret, target.Name, targetNamespace, cancellationToken: cancellationToken);
-        }
-        catch (HttpOperationException ex) when (ex.Response.StatusCode == System.Net.HttpStatusCode.NotFound)
-        {
-            await remoteClient.CreateNamespacedSecretAsync(secret, targetNamespace, cancellationToken: cancellationToken);
-        }
-    }
-
-    private async Task DeleteLocalSecretAsync(string name, string @namespace, CancellationToken cancellationToken)
-    {
-        var existing = await client.GetAsync<V1Secret>(name, @namespace, cancellationToken);
-        if (existing is not null)
-        {
-            await client.DeleteAsync<V1Secret>(name, @namespace, cancellationToken);
-        }
-    }
-
-    private async Task DeleteRemoteSecretAsync(
-        OidcApplication.SecretTarget target,
-        string targetNamespace,
-        CancellationToken cancellationToken)
-    {
-        using var remoteClient = await BuildRemoteClientAsync(target.ClusterRef!.KubeConfigSecretRef, cancellationToken);
-        try
-        {
-            await remoteClient.DeleteNamespacedSecretAsync(target.Name, targetNamespace, cancellationToken: cancellationToken);
-        }
-        catch (HttpOperationException ex) when (ex.Response.StatusCode == System.Net.HttpStatusCode.NotFound)
-        {
-        }
-    }
-
-    private async Task<Kubernetes> BuildRemoteClientAsync(
-        OidcApplication.KubeConfigSecretRef kubeConfigSecretRef,
-        CancellationToken cancellationToken)
-    {
-        var kubeConfigSecret = await client.GetAsync<V1Secret>(
-            kubeConfigSecretRef.Name,
-            kubeConfigSecretRef.Namespace,
-            cancellationToken);
-
-        if (kubeConfigSecret?.Data is null ||
-            !kubeConfigSecret.Data.TryGetValue(kubeConfigSecretRef.Key, out var kubeConfigBytes))
-        {
-            throw new InvalidOperationException(
-                $"Kubeconfig secret key '{kubeConfigSecretRef.Namespace}/{kubeConfigSecretRef.Name}:{kubeConfigSecretRef.Key}' was not found.");
-        }
-
-        await using var stream = new MemoryStream(kubeConfigBytes);
-        var config = KubernetesClientConfiguration.BuildConfigFromConfigFile(stream);
-        return new Kubernetes(config);
-    }
-
-    private static V1Secret BuildSecret(
-        string name,
-        string @namespace,
-        string type,
-        IDictionary<string, string> annotations,
-        IDictionary<string, string> labels,
-        string clientIdKey,
-        string clientSecretKey,
-        string clientId,
-        string clientSecret)
-    {
-        return new V1Secret
-        {
-            Metadata = new V1ObjectMeta
-            {
-                Name = name,
-                NamespaceProperty = @namespace,
-                Annotations = new Dictionary<string, string>(annotations),
-                Labels = new Dictionary<string, string>(labels)
+                ["moira.operator/managed"] = "true",
+                ["moira.operator/oidc-application"] = entity.Name()
             },
-            Type = string.IsNullOrWhiteSpace(type) ? "Opaque" : type,
-            Data = new Dictionary<string, byte[]>
+            Data = idpEntity is null
+                ? new Dictionary<string, string>()
+                : new Dictionary<string, string>
+                {
+                    [ClientIdKey] = idpEntity.Status.ClientId,
+                    [ClientSecretKey] = idpEntity.ClientSecret
+                }
+        };
+    }
+
+    private static SecretTarget ToSecretTarget(
+        OidcApplication entity,
+        OidcApplication.SecretTarget target,
+        IdPOidcApplication? idpEntity = null)
+    {
+        return new SecretTarget
+        {
+            Name = target.Name,
+            Namespace = string.IsNullOrWhiteSpace(target.Namespace) ? entity.Namespace() : target.Namespace,
+            ClusterRef = ToClusterRef(target.ClusterRef),
+            Type = target.Type,
+            Labels = target.Labels,
+            Annotations = target.Annotations,
+            Data = idpEntity is null
+                ? new Dictionary<string, string>()
+                : new Dictionary<string, string>
+                {
+                    [target.Keys.ClientId] = idpEntity.Status.ClientId,
+                    [target.Keys.ClientSecret] = idpEntity.ClientSecret
+                }
+        };
+    }
+
+    private static ClusterRef? ToClusterRef(OidcApplication.ClusterRef? clusterRef)
+    {
+        if (clusterRef is null)
+        {
+            return null;
+        }
+
+        return new ClusterRef
+        {
+            KubeConfigSecretRef = new KubeConfigSecretRef
             {
-                [clientIdKey] = Encoding.UTF8.GetBytes(clientId),
-                [clientSecretKey] = Encoding.UTF8.GetBytes(clientSecret)
+                Name = clusterRef.KubeConfigSecretRef.Name,
+                Namespace = clusterRef.KubeConfigSecretRef.Namespace,
+                Key = clusterRef.KubeConfigSecretRef.Key
             }
         };
     }
 
-    private static OidcApplication.SecretTargetStatus TargetStatus(OidcApplication.SecretTarget target)
+    private static OidcApplication.SecretTargetStatus ToOidcStatus(SecretTargetStatus status)
+    {
+        return new OidcApplication.SecretTargetStatus
+        {
+            Name = status.Name,
+            Namespace = status.Namespace,
+            Cluster = status.Cluster,
+            LastSyncedAt = status.LastSyncedAt,
+            Synced = status.Synced,
+            Message = status.Message
+        };
+    }
+
+    private static OidcApplication.SecretTargetStatus ToFailedOidcStatus(
+        OidcApplication.SecretTarget target,
+        Exception exception)
     {
         return new OidcApplication.SecretTargetStatus
         {
@@ -239,7 +136,9 @@ public class OidcApplicationSecretService(
             Namespace = target.Namespace,
             Cluster = target.ClusterRef is null
                 ? "local"
-                : $"{target.ClusterRef.KubeConfigSecretRef.Namespace}/{target.ClusterRef.KubeConfigSecretRef.Name}"
+                : $"{target.ClusterRef.KubeConfigSecretRef.Namespace}/{target.ClusterRef.KubeConfigSecretRef.Name}",
+            Synced = false,
+            Message = exception.Message
         };
     }
 }
