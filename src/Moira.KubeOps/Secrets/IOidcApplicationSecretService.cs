@@ -1,0 +1,14 @@
+using Moira.Common.Models;
+using Moira.KubeOps.Entities;
+
+namespace Moira.KubeOps.Secrets;
+
+public interface IOidcApplicationSecretService
+{
+    Task<IEnumerable<OidcApplication.SecretTargetStatus>> SyncAsync(
+        OidcApplication entity,
+        IdPOidcApplication idpEntity,
+        CancellationToken cancellationToken);
+
+    Task DeleteAsync(OidcApplication entity, CancellationToken cancellationToken);
+}

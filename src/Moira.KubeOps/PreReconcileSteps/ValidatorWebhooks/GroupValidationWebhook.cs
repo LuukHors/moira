@@ -1,8 +1,8 @@
 using KubeOps.Operator.Web.Webhooks.Admission.Validation;
 using Moira.KubeOps.Entities;
-using Moira.KubeOps.ValidatorWebhooks.Executor;
+using Moira.KubeOps.PreReconcileSteps.ValidatorWebhooks.Executor;
 
-namespace Moira.KubeOps.ValidatorWebhooks;
+namespace Moira.KubeOps.PreReconcileSteps.ValidatorWebhooks;
 
 [ValidationWebhook(typeof(Group))]
 internal class GroupValidationWebhook(IValidatorExecutor<Group> validator) : ValidationWebhook<Group>

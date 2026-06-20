@@ -8,21 +8,27 @@ using Moira.Common.Provider;
 namespace Moira.Authentik.ProviderAdapters;
 
 public class AuthentikApplicationProviderAdapter(
-    IAuthentikHandler<IdPOidcApplication, AuthentikApplicationV3> handler,
-    ILogger<AuthentikGroupProviderAdapter> logger) : AbstractAuthentikProviderAdapter, IProviderAdapter<IdPOidcApplication>
+    IAuthentikHandler<IdPOidcApplication, AuthentikOidcApplicationV3> handler,
+    ILogger<AuthentikApplicationProviderAdapter> logger) : AbstractAuthentikProviderAdapter, IProviderAdapter<IdPOidcApplication>
 {
     public async Task<IdPCommandResult<IdPOidcApplication>> ExecuteReconcileAsync(IdPCommand<IdPOidcApplication> command, CancellationToken cancellationToken)
     {
-        var application = await handler.GetAsync(command, cancellationToken);
+        logger.LogDebug("Reconciling Authentik OIDC application {ApplicationName}", command.Entity.Name);
+        var oidcApplication = await handler.GetAsync(command, cancellationToken);
 
-        if (application is not null)
+        if (oidcApplication is null)
         {
-            return await handler.UpdateAsync(application, command, cancellationToken);
+            logger.LogDebug("Creating Authentik OIDC application {ApplicationName}", command.Entity.Name);
+            return await handler.CreateAsync(command, cancellationToken);
         }
 
-        return await handler.CreateAsync(command, cancellationToken);
+        logger.LogDebug("Updating Authentik OIDC application {ApplicationName}", command.Entity.Name);
+        return await handler.UpdateAsync(oidcApplication, command, cancellationToken);
     }
 
-    public Task<bool> ExecuteDeleteAsync(IdPCommand<IdPOidcApplication> command, CancellationToken cancellationToken) 
-        => handler.DeleteAsync(command, cancellationToken);
+    public Task<bool> ExecuteDeleteAsync(IdPCommand<IdPOidcApplication> command, CancellationToken cancellationToken)
+    {
+        logger.LogDebug("Deleting Authentik OIDC application {ApplicationName}", command.Entity.Name);
+        return handler.DeleteAsync(command, cancellationToken);
+    }
 }

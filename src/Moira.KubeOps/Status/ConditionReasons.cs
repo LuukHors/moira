@@ -18,4 +18,9 @@ public static class ConditionReasons
     public const string DeleteFailed = "DeleteFailed";
     public const string ProviderCheckSucceeded = "ProviderCheckSucceeded";
     public const string ProviderCheckFailed = "ProviderCheckFailed";
+    public const string SecretSyncSucceeded = "SecretSyncSucceeded";
+    public const string SecretSyncFailed = "SecretSyncFailed";
+    public const string RotationNotDue = "RotationNotDue";
+    public const string RotationSucceeded = "RotationSucceeded";
+    public const string RotationFailed = "RotationFailed";
 }

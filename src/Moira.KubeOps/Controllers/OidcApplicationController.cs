@@ -6,7 +6,6 @@ namespace Moira.KubeOps.Controllers;
 
 internal class OidcApplicationController(IAdapterHandler<OidcApplication> handler) : IEntityController<OidcApplication>
 {
-    // public async Task ReconcileAsync(OidcApplication entity, CancellationToken cancellationToken) => await handler.HandleReconcileAsync(entity, cancellationToken);
-    public Task ReconcileAsync(OidcApplication entity, CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task ReconcileAsync(OidcApplication entity, CancellationToken cancellationToken) => handler.HandleReconcileAsync(entity, cancellationToken);
     public Task DeletedAsync(OidcApplication entity, CancellationToken cancellationToken) => Task.CompletedTask;
 }
