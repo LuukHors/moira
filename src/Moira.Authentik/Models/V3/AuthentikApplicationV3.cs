@@ -4,5 +4,5 @@ public record AuthentikApplicationV3(
     string name,
     string slug,
     string? pk,
-    string provider,
+    int? provider,
     string? launch_url);
