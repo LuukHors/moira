@@ -22,12 +22,6 @@ public class AuthentikApplicationProviderAdapter(
             return await handler.CreateAsync(command, cancellationToken);
         }
 
-        if (!oidcApplication.IsComplete)
-        {
-            logger.LogDebug("Repairing incomplete Authentik OIDC application {ApplicationName}", command.Entity.Name);
-            return await handler.UpdateAsync(oidcApplication, command, cancellationToken);
-        }
-
         logger.LogDebug("Updating Authentik OIDC application {ApplicationName}", command.Entity.Name);
         return await handler.UpdateAsync(oidcApplication, command, cancellationToken);
     }
