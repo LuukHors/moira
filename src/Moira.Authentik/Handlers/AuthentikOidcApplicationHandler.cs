@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Moira.Authentik.HttpService;
 using Moira.Authentik.Models.V3;
 using Moira.Common.Commands;
+using Moira.Common.Exceptions;
 using Moira.Common.Models;
 
 namespace Moira.Authentik.Handlers;
@@ -11,8 +12,12 @@ namespace Moira.Authentik.Handlers;
 public partial class AuthentikOidcApplicationHandler(
     IHttpService<AuthentikApplicationV3, AuthentikApplicationV3, string> applicationHttpClient,
     IHttpService<AuthentikOAuth2ProviderV3, AuthentikOAuth2ProviderV3, string> providerHttpClient,
+    IHttpService<AuthentikFlowV3, AuthentikFlowV3, string> flowHttpClient,
     ILogger<AuthentikOidcApplicationHandler> logger) : IAuthentikHandler<IdPOidcApplication, AuthentikOidcApplicationV3>
 {
+    private const string DefaultAuthorizationFlowSlug = "default-provider-authorization-explicit-consent";
+    private const string DefaultInvalidationFlowSlug = "default-provider-invalidation-flow";
+
     public async Task<AuthentikOidcApplicationV3?> GetAsync(IdPCommand<IdPOidcApplication> command, CancellationToken cancellationToken)
     {
         var application = await GetApplicationAsync(command, cancellationToken);
@@ -47,7 +52,7 @@ public partial class AuthentikOidcApplicationHandler(
         var clientId = GenerateToken(24);
         var clientSecret = GenerateToken(48);
         var provider = await providerHttpClient.CreateAsync(
-            BuildProvider(command.Entity, clientId, clientSecret, null),
+            await BuildProviderAsync(command.Entity, clientId, clientSecret, null, cancellationToken),
             command.Entity.IdPProvider,
             cancellationToken);
 
@@ -73,7 +78,12 @@ public partial class AuthentikOidcApplicationHandler(
         var shouldRotate = command.Entity.Spec.RotateClientSecret || string.IsNullOrEmpty(command.Entity.ClientSecret);
         var clientSecret = shouldRotate ? GenerateToken(48) : command.Entity.ClientSecret;
 
-        var desiredProvider = BuildProvider(command.Entity, clientId, clientSecret, current.Provider?.pk ?? current.Application.provider);
+        var desiredProvider = await BuildProviderAsync(
+            command.Entity,
+            clientId,
+            clientSecret,
+            current.Provider?.pk ?? current.Application.provider,
+            cancellationToken);
         var updatedProvider = await ReconcileProviderAsync(
             current.Provider,
             desiredProvider,
@@ -189,20 +199,49 @@ public partial class AuthentikOidcApplicationHandler(
         return await applicationHttpClient.UpdateAsync(current.pk!, desired, command.Entity.IdPProvider, cancellationToken);
     }
 
-    private static AuthentikOAuth2ProviderV3 BuildProvider(
+    private async Task<AuthentikOAuth2ProviderV3> BuildProviderAsync(
         IdPOidcApplication application,
         string clientId,
         string clientSecret,
-        string? providerId)
+        string? providerId,
+        CancellationToken cancellationToken)
     {
+        var authorizationFlowId = await GetFlowIdAsync(
+            application.IdPProvider,
+            DefaultAuthorizationFlowSlug,
+            cancellationToken);
+        var invalidationFlowId = await GetFlowIdAsync(
+            application.IdPProvider,
+            DefaultInvalidationFlowSlug,
+            cancellationToken);
+
         return new AuthentikOAuth2ProviderV3
         {
             name = application.Spec.DisplayName,
             pk = providerId,
             client_id = clientId,
             client_secret = clientSecret,
+            authorization_flow = authorizationFlowId,
+            invalidation_flow = invalidationFlowId,
             redirect_uris = application.Spec.RedirectUris
         };
+    }
+
+    private async Task<string> GetFlowIdAsync(
+        IdPProvider provider,
+        string flowSlug,
+        CancellationToken cancellationToken)
+    {
+        var flow = await flowHttpClient.GetByIdAsync(flowSlug, provider, null, cancellationToken);
+
+        if (flow is null || string.IsNullOrWhiteSpace(flow.pk))
+        {
+            throw new IdPException(
+                $"Authentik flow \"{flowSlug}\" was not found.",
+                IdPExceptionReason.IdpValidationFailed);
+        }
+
+        return flow.pk;
     }
 
     private static AuthentikApplicationV3 BuildApplication(
@@ -230,6 +269,12 @@ public partial class AuthentikOidcApplicationHandler(
             return true;
 
         if (shouldRotate)
+            return true;
+
+        if (!string.Equals(desired.authorization_flow, current.authorization_flow, StringComparison.Ordinal))
+            return true;
+
+        if (!string.Equals(desired.invalidation_flow, current.invalidation_flow, StringComparison.Ordinal))
             return true;
 
         var desiredRedirectUris = desired.redirect_uris.ToHashSet();
