@@ -14,16 +14,22 @@ public class AuthentikApplicationProviderAdapter(
     public async Task<IdPCommandResult<IdPOidcApplication>> ExecuteReconcileAsync(IdPCommand<IdPOidcApplication> command, CancellationToken cancellationToken)
     {
         logger.LogDebug("Reconciling Authentik OIDC application {ApplicationName}", command.Entity.Name);
-        var application = await handler.GetAsync(command, cancellationToken);
+        var oidcApplication = await handler.GetAsync(command, cancellationToken);
 
-        if (application is not null)
+        if (oidcApplication is null)
         {
-            logger.LogDebug("Updating Authentik OIDC application {ApplicationName}", command.Entity.Name);
-            return await handler.UpdateAsync(application, command, cancellationToken);
+            logger.LogDebug("Creating Authentik OIDC application {ApplicationName}", command.Entity.Name);
+            return await handler.CreateAsync(command, cancellationToken);
         }
 
-        logger.LogDebug("Creating Authentik OIDC application {ApplicationName}", command.Entity.Name);
-        return await handler.CreateAsync(command, cancellationToken);
+        if (!oidcApplication.IsComplete)
+        {
+            logger.LogDebug("Repairing incomplete Authentik OIDC application {ApplicationName}", command.Entity.Name);
+            return await handler.UpdateAsync(oidcApplication, command, cancellationToken);
+        }
+
+        logger.LogDebug("Updating Authentik OIDC application {ApplicationName}", command.Entity.Name);
+        return await handler.UpdateAsync(oidcApplication, command, cancellationToken);
     }
 
     public Task<bool> ExecuteDeleteAsync(IdPCommand<IdPOidcApplication> command, CancellationToken cancellationToken)

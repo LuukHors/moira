@@ -104,7 +104,7 @@ public partial class AuthentikOidcApplicationHandler(
         var oidcApplication = await GetAsync(command, cancellationToken);
         if (oidcApplication is null)
         {
-            logger.LogInformation("Complete OIDC application does not exist in Authentik, skipping deletion");
+            logger.LogInformation("OIDC application does not exist in Authentik, skipping deletion");
             return false;
         }
 
