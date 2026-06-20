@@ -8,7 +8,7 @@ using Moira.Common.Provider;
 namespace Moira.Authentik.ProviderAdapters;
 
 public class AuthentikApplicationProviderAdapter(
-    IAuthentikHandler<IdPOidcApplication, AuthentikApplicationV3> handler,
+    IAuthentikHandler<IdPOidcApplication, AuthentikOidcApplicationV3> handler,
     ILogger<AuthentikApplicationProviderAdapter> logger) : AbstractAuthentikProviderAdapter, IProviderAdapter<IdPOidcApplication>
 {
     public async Task<IdPCommandResult<IdPOidcApplication>> ExecuteReconcileAsync(IdPCommand<IdPOidcApplication> command, CancellationToken cancellationToken)
