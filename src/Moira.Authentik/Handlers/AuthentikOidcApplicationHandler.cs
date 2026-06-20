@@ -11,7 +11,7 @@ namespace Moira.Authentik.Handlers;
 
 public partial class AuthentikOidcApplicationHandler(
     IHttpService<AuthentikApplicationV3, AuthentikApplicationV3, string> applicationHttpClient,
-    IHttpService<AuthentikOAuth2ProviderV3, AuthentikOAuth2ProviderV3, string> providerHttpClient,
+    IHttpService<AuthentikOAuth2ProviderV3, AuthentikOAuth2ProviderV3, int> providerHttpClient,
     IHttpService<AuthentikFlowV3, AuthentikFlowV3, string> flowHttpClient,
     ILogger<AuthentikOidcApplicationHandler> logger) : IAuthentikHandler<IdPOidcApplication, AuthentikOidcApplicationV3>
 {
@@ -26,14 +26,14 @@ public partial class AuthentikOidcApplicationHandler(
             return null;
         }
 
-        if (string.IsNullOrWhiteSpace(application.provider))
+        if (application.provider is null)
         {
             logger.LogInformation("Authentik application {ApplicationId} does not have an OAuth2 provider", application.pk);
             return new AuthentikOidcApplicationV3(application, null);
         }
 
         var provider = await providerHttpClient.GetByIdAsync(
-            application.provider,
+            application.provider.Value,
             command.Entity.IdPProvider,
             null,
             cancellationToken);
@@ -57,7 +57,7 @@ public partial class AuthentikOidcApplicationHandler(
             cancellationToken);
 
         var application = await applicationHttpClient.CreateAsync(
-            BuildApplication(command.Entity, provider.pk ?? string.Empty, null),
+            BuildApplication(command.Entity, provider.pk, null),
             command.Entity.IdPProvider,
             cancellationToken);
 
@@ -125,7 +125,7 @@ public partial class AuthentikOidcApplicationHandler(
 
         var deletedProvider = oidcApplication.Provider is null ||
                               await providerHttpClient.DeleteAsync(
-                                  oidcApplication.Provider.pk!,
+                                  oidcApplication.Provider.pk!.Value,
                                   command.Entity.IdPProvider,
                                   cancellationToken);
 
@@ -180,7 +180,7 @@ public partial class AuthentikOidcApplicationHandler(
         }
 
         logger.LogInformation("OIDC provider {ProviderName} is not up to date, updating provider id {ProviderId}", desired.name, current.pk);
-        return await providerHttpClient.UpdateAsync(current.pk!, desired, command.Entity.IdPProvider, cancellationToken);
+        return await providerHttpClient.UpdateAsync(current.pk!.Value, desired, command.Entity.IdPProvider, cancellationToken);
     }
 
     private async Task<AuthentikApplicationV3> ReconcileApplicationAsync(
@@ -203,7 +203,7 @@ public partial class AuthentikOidcApplicationHandler(
         IdPOidcApplication application,
         string clientId,
         string clientSecret,
-        string? providerId,
+        int? providerId,
         CancellationToken cancellationToken)
     {
         var authorizationFlowId = await GetFlowIdAsync(
@@ -223,7 +223,7 @@ public partial class AuthentikOidcApplicationHandler(
             client_secret = clientSecret,
             authorization_flow = authorizationFlowId,
             invalidation_flow = invalidationFlowId,
-            redirect_uris = application.Spec.RedirectUris
+            redirect_uris = application.Spec.RedirectUris.Select(uri => new AuthentikRedirectUriV3("strict", uri))
         };
     }
 
@@ -246,7 +246,7 @@ public partial class AuthentikOidcApplicationHandler(
 
     private static AuthentikApplicationV3 BuildApplication(
         IdPOidcApplication application,
-        string providerId,
+        int? providerId,
         string? applicationId)
     {
         return new AuthentikApplicationV3(
@@ -277,8 +277,12 @@ public partial class AuthentikOidcApplicationHandler(
         if (!string.Equals(desired.invalidation_flow, current.invalidation_flow, StringComparison.Ordinal))
             return true;
 
-        var desiredRedirectUris = desired.redirect_uris.ToHashSet();
-        var currentRedirectUris = current.redirect_uris.ToHashSet();
+        var desiredRedirectUris = desired.redirect_uris
+            .Select(uri => (uri.matching_mode, uri.url, uri.redirect_uri_type))
+            .ToHashSet();
+        var currentRedirectUris = current.redirect_uris
+            .Select(uri => (uri.matching_mode, uri.url, uri.redirect_uri_type))
+            .ToHashSet();
 
         return !desiredRedirectUris.SetEquals(currentRedirectUris);
     }
