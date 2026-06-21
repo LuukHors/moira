@@ -48,7 +48,7 @@ public class OidcApplicationDependencyProvider(
             cancellationToken);
 
         var clientSecret = sourceSecret?.Data is not null &&
-                           sourceSecret.Data.TryGetValue("clientSecret", out var clientSecretBytes)
+                           sourceSecret.Data.TryGetValue("ClientSecret", out var clientSecretBytes)
             ? Encoding.UTF8.GetString(clientSecretBytes)
             : string.Empty;
 
