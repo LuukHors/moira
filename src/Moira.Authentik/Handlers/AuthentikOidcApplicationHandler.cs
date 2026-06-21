@@ -29,7 +29,7 @@ public partial class AuthentikOidcApplicationHandler(
 
         if (application.provider is null)
         {
-            logger.LogInformation("Authentik application {ApplicationId} does not have an OAuth2 provider", application.pk);
+            logger.LogInformation("Authentik application {ApplicationId} does not have an OAuth2 provider", application.slug);
             return new AuthentikOidcApplicationV3(application, null);
         }
 
@@ -41,7 +41,7 @@ public partial class AuthentikOidcApplicationHandler(
 
         if (provider is null)
         {
-            logger.LogInformation("Authentik application {ApplicationId} references missing OAuth2 provider {ProviderId}", application.pk, application.provider);
+            logger.LogInformation("Authentik application {ApplicationId} references missing OAuth2 provider {ProviderId}", application.slug, application.provider);
         }
 
         return new AuthentikOidcApplicationV3(application, provider);
@@ -62,7 +62,7 @@ public partial class AuthentikOidcApplicationHandler(
             command.Entity.IdPProvider,
             cancellationToken);
 
-        logger.LogInformation("Created Authentik OIDC application {DisplayName} with application id {ApplicationId}", application.name, application.pk);
+        logger.LogInformation("Created Authentik OIDC application {DisplayName} with application id {ApplicationId}", application.name, application.slug);
 
         return Result(command, application, provider, clientSecret, now);
     }
@@ -92,7 +92,7 @@ public partial class AuthentikOidcApplicationHandler(
         logger.LogInformation(
             "Created Authentik OIDC application {DisplayName} with application id {ApplicationId} and existing provider id {ProviderId}",
             application.name,
-            application.pk,
+            application.slug,
             provider.pk);
 
         return application;
@@ -130,7 +130,7 @@ public partial class AuthentikOidcApplicationHandler(
             command,
             cancellationToken);
 
-        logger.LogInformation("Updated Authentik OIDC application {DisplayName} with application id {ApplicationId}", updatedApplication.name, updatedApplication.pk);
+        logger.LogInformation("Updated Authentik OIDC application {DisplayName} with application id {ApplicationId}", updatedApplication.name, updatedApplication.slug);
 
         return Result(command, updatedApplication, updatedProvider, clientSecret, shouldRotate ? now : command.Entity.Status.LastRotatedAt ?? now);
     }
@@ -151,7 +151,7 @@ public partial class AuthentikOidcApplicationHandler(
         }
 
         var deletedApplication = await applicationHttpClient.DeleteAsync(
-            oidcApplication.Application.pk!,
+            oidcApplication.Application.slug,
             command.Entity.IdPProvider,
             cancellationToken);
 
@@ -163,7 +163,7 @@ public partial class AuthentikOidcApplicationHandler(
 
         logger.LogInformation(
             "Delete request for OIDC application id {ApplicationId} completed with application deleted {ApplicationDeleted} and provider deleted {ProviderDeleted}",
-            oidcApplication.Application.pk,
+            oidcApplication.Application.slug,
             deletedApplication,
             deletedProvider);
 
@@ -223,12 +223,12 @@ public partial class AuthentikOidcApplicationHandler(
     {
         if (!ShouldUpdate(current, desired))
         {
-            logger.LogInformation("OIDC application {DisplayName} is already up to date with application id {ApplicationId}", current.name, current.pk);
+            logger.LogInformation("OIDC application {DisplayName} is already up to date with application id {ApplicationId}", current.name, current.slug);
             return current;
         }
 
-        logger.LogInformation("OIDC application {DisplayName} is not up to date, updating application id {ApplicationId}", desired.name, current.pk);
-        return await applicationHttpClient.UpdateAsync(current.pk!, desired, command.Entity.IdPProvider, cancellationToken);
+        logger.LogInformation("OIDC application {DisplayName} is not up to date, updating application id {ApplicationId}", desired.name, current.slug);
+        return await applicationHttpClient.UpdateAsync(current.slug, desired, command.Entity.IdPProvider, cancellationToken);
     }
 
     private async Task<AuthentikOAuth2ProviderV3> BuildProviderAsync(
@@ -280,12 +280,12 @@ public partial class AuthentikOidcApplicationHandler(
     private static AuthentikApplicationV3 BuildApplication(
         IdPOidcApplication application,
         int? providerId,
-        string? applicationId)
+        string? applicationPk)
     {
         return new AuthentikApplicationV3(
             application.Spec.DisplayName,
             Slug(application.Name),
-            applicationId,
+            applicationPk,
             providerId,
             string.IsNullOrWhiteSpace(application.Spec.LaunchUrl) ? null : application.Spec.LaunchUrl);
     }
@@ -339,7 +339,7 @@ public partial class AuthentikOidcApplicationHandler(
             command.Id,
             command.Entity.CopyWithNewStatus(
                 new IdPOidcApplicationStatus(
-                    application.pk ?? string.Empty,
+                    application.slug,
                     provider.client_id,
                     lastRotatedAt,
                     lastRotatedAt.AddDays(command.Entity.Spec.RotationDays)),
