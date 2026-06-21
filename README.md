@@ -37,6 +37,31 @@ This will be the basic idea of this project.
 - Have the state of my IDP in git (use gitops!).
 - Be able to automate my IDP object creation using CRD's.
 
+## OIDC application secrets
+Moira always creates a source credential secret for an OIDC application. Additional Kubernetes secrets can be configured with `spec.secrets`.
+
+When no `template` is supplied, Moira writes the default keys:
+
+```yaml
+secrets:
+  - name: example-oidc
+    namespace: default
+```
+
+This produces `ClientId` and `ClientSecret`.
+
+Use `template` to choose the output keys and values. `{clientId}` and `{clientSecret}` are replaced with the generated OIDC credentials:
+
+```yaml
+secrets:
+  - name: example-oidc
+    namespace: default
+    template:
+      connection: "client={clientId}&secret={clientSecret}"
+      client-id: "{clientId}"
+      client-secret: "{clientSecret}"
+```
+
 ## Personal goals
 - Learn more about Kubernetes operators.
 - Learn more about IDPs.

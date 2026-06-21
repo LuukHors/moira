@@ -11,29 +11,31 @@ public class OidcApplicationSecretService(
 {
     private const string ClientIdKey = "ClientId";
     private const string ClientSecretKey = "ClientSecret";
+    private const string ClientIdToken = "{clientId}";
+    private const string ClientSecretToken = "{clientSecret}";
 
-    public async Task<IEnumerable<OidcApplication.SecretTargetStatus>> SyncAsync(
+    public async Task<IEnumerable<OidcApplication.SecretStatus>> SyncAsync(
         OidcApplication entity,
         IdPOidcApplication idpEntity,
         CancellationToken cancellationToken)
     {
         await secretService.SyncAsync(SourceTarget(entity, idpEntity), cancellationToken);
 
-        var statuses = new List<OidcApplication.SecretTargetStatus>();
-        foreach (var target in entity.Spec.SecretTargets)
+        var statuses = new List<OidcApplication.SecretStatus>();
+        foreach (var secret in entity.Spec.Secrets ?? [])
         {
             try
             {
                 var genericStatus = await secretService.SyncAsync(
-                    ToSecretTarget(entity, target, idpEntity),
+                    ToSecretTarget(entity, secret, idpEntity),
                     cancellationToken);
 
                 statuses.Add(ToOidcStatus(genericStatus));
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to sync OIDC application secret target {SecretNamespace}/{SecretName}", target.Namespace, target.Name);
-                statuses.Add(ToFailedOidcStatus(target, ex));
+                logger.LogError(ex, "Failed to sync OIDC application secret {SecretNamespace}/{SecretName}", secret.Namespace, secret.Name);
+                statuses.Add(ToFailedOidcStatus(secret, ex));
             }
         }
 
@@ -44,9 +46,9 @@ public class OidcApplicationSecretService(
     {
         await secretService.DeleteAsync(SourceTarget(entity), cancellationToken);
 
-        foreach (var target in entity.Spec.SecretTargets)
+        foreach (var secret in entity.Spec.Secrets ?? [])
         {
-            await secretService.DeleteAsync(ToSecretTarget(entity, target), cancellationToken);
+            await secretService.DeleteAsync(ToSecretTarget(entity, secret), cancellationToken);
         }
     }
 
@@ -74,25 +76,46 @@ public class OidcApplicationSecretService(
 
     private static SecretTarget ToSecretTarget(
         OidcApplication entity,
-        OidcApplication.SecretTarget target,
+        OidcApplication.Secret secret,
         IdPOidcApplication? idpEntity = null)
     {
         return new SecretTarget
         {
-            Name = target.Name,
-            Namespace = string.IsNullOrWhiteSpace(target.Namespace) ? entity.Namespace() : target.Namespace,
-            ClusterRef = ToClusterRef(target.ClusterRef),
-            Type = target.Type,
-            Labels = target.Labels,
-            Annotations = target.Annotations,
+            Name = secret.Name,
+            Namespace = string.IsNullOrWhiteSpace(secret.Namespace) ? entity.Namespace() : secret.Namespace,
+            ClusterRef = ToClusterRef(secret.ClusterRef),
+            Type = secret.Type,
+            Labels = secret.Labels,
+            Annotations = secret.Annotations,
             Data = idpEntity is null
                 ? new Dictionary<string, string>()
-                : new Dictionary<string, string>
-                {
-                    [target.Keys.ClientId] = idpEntity.Status.ClientId,
-                    [target.Keys.ClientSecret] = idpEntity.ClientSecret
-                }
+                : RenderData(secret, idpEntity)
         };
+    }
+
+    private static IDictionary<string, string> RenderData(
+        OidcApplication.Secret secret,
+        IdPOidcApplication idpEntity)
+    {
+        if (secret.Template is null || secret.Template.Count == 0)
+        {
+            return new Dictionary<string, string>
+            {
+                [ClientIdKey] = idpEntity.Status.ClientId,
+                [ClientSecretKey] = idpEntity.ClientSecret
+            };
+        }
+
+        return secret.Template.ToDictionary(
+            entry => entry.Key,
+            entry => RenderTemplate(entry.Value, idpEntity));
+    }
+
+    private static string RenderTemplate(string template, IdPOidcApplication idpEntity)
+    {
+        return template
+            .Replace(ClientIdToken, idpEntity.Status.ClientId, StringComparison.Ordinal)
+            .Replace(ClientSecretToken, idpEntity.ClientSecret, StringComparison.Ordinal);
     }
 
     private static ClusterRef? ToClusterRef(OidcApplication.ClusterRef? clusterRef)
@@ -113,9 +136,9 @@ public class OidcApplicationSecretService(
         };
     }
 
-    private static OidcApplication.SecretTargetStatus ToOidcStatus(SecretTargetStatus status)
+    private static OidcApplication.SecretStatus ToOidcStatus(SecretTargetStatus status)
     {
-        return new OidcApplication.SecretTargetStatus
+        return new OidcApplication.SecretStatus
         {
             Name = status.Name,
             Namespace = status.Namespace,
@@ -126,17 +149,17 @@ public class OidcApplicationSecretService(
         };
     }
 
-    private static OidcApplication.SecretTargetStatus ToFailedOidcStatus(
-        OidcApplication.SecretTarget target,
+    private static OidcApplication.SecretStatus ToFailedOidcStatus(
+        OidcApplication.Secret secret,
         Exception exception)
     {
-        return new OidcApplication.SecretTargetStatus
+        return new OidcApplication.SecretStatus
         {
-            Name = target.Name,
-            Namespace = target.Namespace,
-            Cluster = target.ClusterRef is null
+            Name = secret.Name,
+            Namespace = secret.Namespace,
+            Cluster = secret.ClusterRef is null
                 ? "local"
-                : $"{target.ClusterRef.KubeConfigSecretRef.Namespace}/{target.ClusterRef.KubeConfigSecretRef.Name}",
+                : $"{secret.ClusterRef.KubeConfigSecretRef.Namespace}/{secret.ClusterRef.KubeConfigSecretRef.Name}",
             Synced = false,
             Message = exception.Message
         };

@@ -12,7 +12,7 @@ public class OidcApplication : CustomKubernetesEntity<OidcApplication.Applicatio
         public ProviderRef ProviderRef { get; set; } = new();
         public bool AutoDelete { get; set; } = true;
         public OidcSpec Oidc { get; set; } = new();
-        public IEnumerable<SecretTarget> SecretTargets { get; set; } = [];
+        public IEnumerable<Secret> Secrets { get; set; } = [];
         public int RotationDays { get; set; } = 90;
     }
 
@@ -23,11 +23,11 @@ public class OidcApplication : CustomKubernetesEntity<OidcApplication.Applicatio
         public long? ObservedGeneration { get; set; } = 0;
         public DateTime? LastRotatedAt { get; set; }
         public DateTime? NextRotationAt { get; set; }
-        public IEnumerable<SecretTargetStatus> SecretTargets { get; set; } = [];
+        public IEnumerable<SecretStatus> Secrets { get; set; } = [];
         public IList<V1Condition> Conditions { get; set; } = new List<V1Condition>();
     }
 
-    public class SecretTarget
+    public class Secret
     {
         public string Name { get; set; } = string.Empty;
         public string Namespace { get; set; } = string.Empty;
@@ -35,7 +35,7 @@ public class OidcApplication : CustomKubernetesEntity<OidcApplication.Applicatio
         public string Type { get; set; } = "Opaque";
         public IDictionary<string, string> Labels { get; set; } = new Dictionary<string, string>();
         public IDictionary<string, string> Annotations { get; set; } = new Dictionary<string, string>();
-        public SecretTargetKeys Keys { get; set; } = new();
+        public IDictionary<string, string> Template { get; set; } = new Dictionary<string, string>();
     }
 
     public class ClusterRef
@@ -50,13 +50,7 @@ public class OidcApplication : CustomKubernetesEntity<OidcApplication.Applicatio
         public string Key { get; set; } = string.Empty;
     }
 
-    public class SecretTargetKeys
-    {
-        public string ClientId { get; set; } = "ClientId";
-        public string ClientSecret { get; set; } = "ClientSecret";
-    }
-
-    public class SecretTargetStatus
+    public class SecretStatus
     {
         public string Name { get; set; } = string.Empty;
         public string Namespace { get; set; } = string.Empty;

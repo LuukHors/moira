@@ -5,7 +5,7 @@ namespace Moira.KubeOps.Secrets;
 
 public interface IOidcApplicationSecretService
 {
-    Task<IEnumerable<OidcApplication.SecretTargetStatus>> SyncAsync(
+    Task<IEnumerable<OidcApplication.SecretStatus>> SyncAsync(
         OidcApplication entity,
         IdPOidcApplication idpEntity,
         CancellationToken cancellationToken);

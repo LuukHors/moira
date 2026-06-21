@@ -26,7 +26,7 @@ public class OidcApplicationResultHandler(
         entity.Status.ClientId = idpEntity.Status.ClientId;
         entity.Status.LastRotatedAt = idpEntity.Status.LastRotatedAt;
         entity.Status.NextRotationAt = idpEntity.Status.NextRotationAt;
-        entity.Status.SecretTargets = secretTargetStatuses;
+        entity.Status.Secrets = secretTargetStatuses;
 
         entity.UpsertCondition(
             entity.Status.Conditions,
