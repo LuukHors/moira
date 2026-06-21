@@ -8,6 +8,13 @@ spec:
   autoDelete: true
   providerRef:
     name: authentik-provider
+  secrets:
+    - name: dev-argocd-application-oidc
+      namespace: default
+      template:
+        oidc-url: "client={clientId}&secret={clientSecret}"
+        client-id: "{clientId}"
+        client-secret: "{clientSecret}"
 ---
 apiVersion: moira.operator/v1alpha1
 kind: OidcApplication
@@ -19,3 +26,6 @@ spec:
   autoDelete: false
   providerRef:
     name: authentik-provider
+  secrets:
+    - name: moira-test-oidc
+      namespace: default

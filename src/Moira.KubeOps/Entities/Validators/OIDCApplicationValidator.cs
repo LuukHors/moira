@@ -21,53 +21,63 @@ internal class OIDCApplicationValidator : AbstractValidator<OidcApplication>
         RuleFor(a => a.Spec.RotationDays)
             .GreaterThan(0)
             .WithMessage("The \"rotationDays\" property should be greater than 0");
-        RuleFor(a => a.Spec.SecretTargets)
-            .NotEmpty()
-            .WithMessage("At least one secret target should be configured")
-            .Must(HaveUniqueTargets)
-            .WithMessage("Secret targets should be unique by cluster, namespace and name");
+        RuleFor(a => a.Spec.Secrets)
+            .Must(HaveUniqueSecrets)
+            .WithMessage("Secrets should be unique by cluster, namespace and name");
 
-        RuleForEach(a => a.Spec.SecretTargets).ChildRules(target =>
+        RuleForEach(a => a.Spec.Secrets).ChildRules(secret =>
         {
-            target.RuleFor(t => t.Name)
+            secret.RuleFor(t => t.Name)
                 .NotEmpty()
                 .Matches(@"^[a-z0-9]([-a-z0-9]*[a-z0-9])?$")
-                .WithMessage("Secret target name should be a valid Kubernetes name");
-            target.RuleFor(t => t.Namespace)
+                .WithMessage("Secret name should be a valid Kubernetes name");
+            secret.RuleFor(t => t.Namespace)
                 .NotEmpty()
                 .Matches(@"^[a-z0-9]([-a-z0-9]*[a-z0-9])?$")
-                .WithMessage("Secret target namespace should be a valid Kubernetes name");
-            target.RuleFor(t => t.Keys.ClientId)
-                .NotEmpty()
-                .WithMessage("Secret target clientId key should be set");
-            target.RuleFor(t => t.Keys.ClientSecret)
-                .NotEmpty()
-                .WithMessage("Secret target clientSecret key should be set");
-            target.When(t => t.ClusterRef is not null, () =>
+                .WithMessage("Secret namespace should be a valid Kubernetes name");
+            secret.When(t => t.Template is not null, () =>
             {
-                target.RuleFor(t => t.ClusterRef!.KubeConfigSecretRef.Name)
+                secret.RuleForEach(t => t.Template).ChildRules(template =>
+                {
+                    template.RuleFor(t => t.Key)
+                        .NotEmpty()
+                        .Matches(@"^[-._a-zA-Z0-9]+$")
+                        .WithMessage("Secret template key should be a valid Kubernetes secret data key");
+                    template.RuleFor(t => t.Value)
+                        .NotEmpty()
+                        .WithMessage("Secret template value should not be empty");
+                });
+            });
+            secret.When(t => t.ClusterRef is not null, () =>
+            {
+                secret.RuleFor(t => t.ClusterRef!.KubeConfigSecretRef.Name)
                     .NotEmpty()
-                    .WithMessage("Remote secret targets should set clusterRef.kubeConfigSecretRef.name");
-                target.RuleFor(t => t.ClusterRef!.KubeConfigSecretRef.Namespace)
+                    .WithMessage("Remote secrets should set clusterRef.kubeConfigSecretRef.name");
+                secret.RuleFor(t => t.ClusterRef!.KubeConfigSecretRef.Namespace)
                     .NotEmpty()
-                    .WithMessage("Remote secret targets should set clusterRef.kubeConfigSecretRef.namespace");
-                target.RuleFor(t => t.ClusterRef!.KubeConfigSecretRef.Key)
+                    .WithMessage("Remote secrets should set clusterRef.kubeConfigSecretRef.namespace");
+                secret.RuleFor(t => t.ClusterRef!.KubeConfigSecretRef.Key)
                     .NotEmpty()
-                    .WithMessage("Remote secret targets should set clusterRef.kubeConfigSecretRef.key");
+                    .WithMessage("Remote secrets should set clusterRef.kubeConfigSecretRef.key");
             });
         });
     }
 
-    private static bool HaveUniqueTargets(IEnumerable<OidcApplication.SecretTarget> targets)
+    private static bool HaveUniqueSecrets(IEnumerable<OidcApplication.Secret>? secrets)
     {
-        var keys = targets.Select(target =>
+        if (secrets is null)
         {
-            var cluster = target.ClusterRef is null
+            return true;
+        }
+
+        var keys = secrets.Select(secret =>
+        {
+            var cluster = secret.ClusterRef is null
                 ? "local"
-                : $"{target.ClusterRef.KubeConfigSecretRef.Namespace}/{target.ClusterRef.KubeConfigSecretRef.Name}/{target.ClusterRef.KubeConfigSecretRef.Key}";
-            return $"{cluster}/{target.Namespace}/{target.Name}";
+                : $"{secret.ClusterRef.KubeConfigSecretRef.Namespace}/{secret.ClusterRef.KubeConfigSecretRef.Name}/{secret.ClusterRef.KubeConfigSecretRef.Key}";
+            return $"{cluster}/{secret.Namespace}/{secret.Name}";
         });
 
-        return keys.Distinct(StringComparer.OrdinalIgnoreCase).Count() == targets.Count();
+        return keys.Distinct(StringComparer.OrdinalIgnoreCase).Count() == secrets.Count();
     }
 }
