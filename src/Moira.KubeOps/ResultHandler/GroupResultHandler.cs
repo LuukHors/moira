@@ -1,3 +1,4 @@
+using k8s.Models;
 using KubeOps.Abstractions.Queue;
 using KubeOps.KubernetesClient;
 using Microsoft.Extensions.Logging;
@@ -33,12 +34,6 @@ public class GroupResultHandler(
             ConditionStatus.True,
             ConditionReasons.DependenciesResolved,
             "Referenced provider and credentials were resolved.");
-        entity.UpsertCondition(
-            entity.Status.Conditions,
-            ConditionTypes.Deleting,
-            ConditionStatus.False,
-            ConditionReasons.ReconcileSucceeded,
-            "Group is not being deleted.");
 
         await client.UpdateStatusAsync(entity, cancellationToken);
         logger.LogDebug("Updated group status after successful reconcile with group id {GroupId}", idpEntity.Status.GroupId);
@@ -67,16 +62,6 @@ public class GroupResultHandler(
                 exception.Message);
         }
 
-        if (IsDeleting(entity))
-        {
-            entity.UpsertCondition(
-                entity.Status.Conditions,
-                ConditionTypes.Deleting,
-                ConditionStatus.False,
-                ConditionReasons.DeleteFailed,
-                exception.Message);
-        }
-
         await client.UpdateStatusAsync(entity, cancellationToken);
         logger.LogDebug("Updated group status after failed operation with reason {FailureReason}", exception.Reason);
         
@@ -86,24 +71,7 @@ public class GroupResultHandler(
 
     public async Task HandleDeleteAsync(Group entity, IdPGroup idpEntity, CancellationToken cancellationToken)
     {
-        entity.Status.ObservedGeneration = entity.Metadata.Generation;
-
-        var reason = idpEntity.Spec.AutoDelete
-            ? ConditionReasons.DeleteSucceeded
-            : ConditionReasons.DeleteSkipped;
-        var message = idpEntity.Spec.AutoDelete
-            ? "Group deletion has been handled by the identity provider."
-            : "Group deletion was skipped because autoDelete is disabled.";
-
-        entity.UpsertCondition(
-            entity.Status.Conditions,
-            ConditionTypes.Deleting,
-            ConditionStatus.False,
-            reason,
-            message);
-
-        await client.UpdateStatusAsync(entity, cancellationToken);
-        logger.LogDebug("Updated group status after delete with reason {DeleteReason}", reason);
+        
     }
 
     private static bool IsDeleting(Group entity)

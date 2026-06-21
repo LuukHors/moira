@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using k8s.Models;
 using KubeOps.Abstractions.Entities;
 using Microsoft.Extensions.Logging;
@@ -20,6 +21,8 @@ public class AdapterHandler<TK8SEntity, TEntity>(
 {
     public async Task HandleReconcileAsync(TK8SEntity entity, CancellationToken cancellationToken)
     {
+        var timer = new Stopwatch();
+        timer.Start();
         var operationId = Guid.NewGuid();
         using var _ = logger.BeginScope(new Dictionary<string, object>
         {
@@ -60,6 +63,8 @@ public class AdapterHandler<TK8SEntity, TEntity>(
             await resultHandler.HandleAsync(entity, result.Entity, cancellationToken);
             
             logger.LogDebug("Completed reconcile loop");
+            timer.Stop();
+            logger.LogInformation("Finished reconcile loop in {Duration}ms", timer.ElapsedMilliseconds);
         }
         catch (MoiraException ex)
         {
@@ -75,6 +80,8 @@ public class AdapterHandler<TK8SEntity, TEntity>(
 
     public async Task HandleDeleteAsync(TK8SEntity entity, CancellationToken cancellationToken)
     {
+        var timer = new Stopwatch();
+        timer.Start();
         var operationId = Guid.NewGuid();
         using var _ = logger.BeginScope(new Dictionary<string, object>
         {
@@ -103,6 +110,8 @@ public class AdapterHandler<TK8SEntity, TEntity>(
             await resultHandler.HandleDeleteAsync(entity, idPEntity, cancellationToken);
 
             if (entityDeleted) logger.LogInformation("Entity was deleted");
+            timer.Stop();
+            logger.LogInformation("Finished reconcile loop in {Duration}ms", timer.ElapsedMilliseconds);
         }
         catch (MoiraException ex)
         {

@@ -7,5 +7,5 @@ spec:
   type: Authentik
   baseUrl: https://auth.internal.sealeo.io
   secretRef:
-    name: auth-secret
+    name: moira-test-oidc-credentials
     namespace: default

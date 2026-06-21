@@ -6,12 +6,7 @@ namespace Moira.Authentik.Handlers;
 
 public interface IAuthentikOidcApplicationHandler : IAuthentikHandler<IdPOidcApplication, AuthentikOidcApplicationV3>
 {
-    Task<AuthentikOAuth2ProviderV3?> GetProviderAsync(
+    Task<AuthentikOAuth2ProviderV3> CreateProviderAsync(
         IdPCommand<IdPOidcApplication> command,
-        CancellationToken cancellationToken);
-
-    Task<AuthentikApplicationV3> CreateApplicationAsync(
-        IdPCommand<IdPOidcApplication> command,
-        AuthentikOAuth2ProviderV3 provider,
         CancellationToken cancellationToken);
 }
