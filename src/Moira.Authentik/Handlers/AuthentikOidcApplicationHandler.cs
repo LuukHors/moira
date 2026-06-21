@@ -36,13 +36,8 @@ public partial class AuthentikOidcApplicationHandler(
         var provider = await providerHttpClient.GetByIdAsync(
             application.provider.Value,
             command.Entity.IdPProvider,
-            null,
+            DefaultAttributes,
             cancellationToken);
-
-        if (provider is null)
-        {
-            logger.LogInformation("Authentik application {ApplicationId} references missing OAuth2 provider {ProviderId}", application.slug, application.provider);
-        }
 
         return new AuthentikOidcApplicationV3(application, provider);
     }
@@ -50,52 +45,31 @@ public partial class AuthentikOidcApplicationHandler(
     public async Task<IdPCommandResult<IdPOidcApplication>> CreateAsync(IdPCommand<IdPOidcApplication> command, CancellationToken cancellationToken)
     {
         var now = DateTime.UtcNow;
-        var clientId = GenerateToken(24);
-        var clientSecret = GenerateToken(48);
-        var provider = await providerHttpClient.CreateAsync(
-            await BuildProviderAsync(command.Entity, clientId, clientSecret, null, cancellationToken),
-            command.Entity.IdPProvider,
-            cancellationToken);
-
+        var provider = await CreateProviderAsync(command, cancellationToken);
+        
         var application = await applicationHttpClient.CreateAsync(
-            BuildApplication(command.Entity, provider.pk, null),
+            BuildApplication(command.Entity, provider!.pk, null),
             command.Entity.IdPProvider,
             cancellationToken);
 
         logger.LogInformation("Created Authentik OIDC application {DisplayName} with application id {ApplicationId}", application.name, application.slug);
 
-        return Result(command, application, provider, clientSecret, now);
+        return Result(command, application, provider, provider.client_secret, now);
     }
 
-    public async Task<AuthentikOAuth2ProviderV3?> GetProviderAsync(
+    public async Task<AuthentikOAuth2ProviderV3> CreateProviderAsync(
         IdPCommand<IdPOidcApplication> command,
         CancellationToken cancellationToken)
     {
-        logger.LogDebug("Looking up managed Authentik OAuth2 provider by display name {DisplayName}", command.Entity.Spec.DisplayName);
-        return await providerHttpClient.GetByNameAsync(
-            command.Entity.Spec.DisplayName,
-            command.Entity.IdPProvider,
-            DefaultAttributes,
-            cancellationToken);
-    }
-
-    public async Task<AuthentikApplicationV3> CreateApplicationAsync(
-        IdPCommand<IdPOidcApplication> command,
-        AuthentikOAuth2ProviderV3 provider,
-        CancellationToken cancellationToken)
-    {
-        var application = await applicationHttpClient.CreateAsync(
-            BuildApplication(command.Entity, provider.pk, null),
+        var clientId = GenerateToken(24);
+        var clientSecret = GenerateToken(48);
+        
+        var provider = await providerHttpClient.CreateAsync(
+            await BuildProviderAsync(command.Entity, clientId, clientSecret, null, cancellationToken),
             command.Entity.IdPProvider,
             cancellationToken);
-
-        logger.LogInformation(
-            "Created Authentik OIDC application {DisplayName} with application id {ApplicationId} and existing provider id {ProviderId}",
-            application.name,
-            application.slug,
-            provider.pk);
-
-        return application;
+        
+        return provider;
     }
 
     public async Task<IdPCommandResult<IdPOidcApplication>> UpdateAsync(
@@ -114,10 +88,10 @@ public partial class AuthentikOidcApplicationHandler(
             command.Entity,
             clientId,
             clientSecret,
-            current.Provider?.pk ?? current.Application.provider,
+            current.Application.provider,
             cancellationToken);
         var updatedProvider = await ReconcileProviderAsync(
-            current.Provider,
+            current.Provider!,
             desiredProvider,
             shouldRotate,
             command,
@@ -129,9 +103,7 @@ public partial class AuthentikOidcApplicationHandler(
             desiredApplication,
             command,
             cancellationToken);
-
-        logger.LogInformation("Updated Authentik OIDC application {DisplayName} with application id {ApplicationId}", updatedApplication.name, updatedApplication.slug);
-
+        
         return Result(command, updatedApplication, updatedProvider, clientSecret, shouldRotate ? now : command.Entity.Status.LastRotatedAt ?? now);
     }
 
@@ -193,18 +165,12 @@ public partial class AuthentikOidcApplicationHandler(
     }
 
     private async Task<AuthentikOAuth2ProviderV3> ReconcileProviderAsync(
-        AuthentikOAuth2ProviderV3? current,
+        AuthentikOAuth2ProviderV3 current,
         AuthentikOAuth2ProviderV3 desired,
         bool shouldRotate,
         IdPCommand<IdPOidcApplication> command,
         CancellationToken cancellationToken)
     {
-        if (current is null)
-        {
-            logger.LogInformation("OIDC provider does not exist, creating provider {ProviderName}", desired.name);
-            return await providerHttpClient.CreateAsync(desired, command.Entity.IdPProvider, cancellationToken);
-        }
-
         if (!ShouldUpdate(current, desired, shouldRotate))
         {
             logger.LogInformation("OIDC provider {ProviderName} is already up to date with provider id {ProviderId}", current.name, current.pk);

@@ -105,7 +105,15 @@ public class AuthentikHttpService<TModel, TModelWrite, TId>(
     private async Task<IFlurlRequest> BuildUrl(IdPProvider provider, TId? id = default, CancellationToken ct = default)
     {
         var token = await authService.AcquireTokenAsync(provider, ct);
-        var relativePath = id is null ? route.CollectionEntityPath : route.SingleEntityPath(id);
+        
+        var hasId = id switch
+        {
+            null => false,
+            int i => i != 0,
+            _ => true
+        };
+            
+        var relativePath = !hasId ? route.CollectionEntityPath : route.SingleEntityPath(id!);
         
         return provider.BaseUrl
             .WithOAuthBearerToken(token)

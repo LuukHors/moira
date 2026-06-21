@@ -58,12 +58,6 @@ public class OidcApplicationResultHandler(
             idpEntity.Spec.RotateClientSecret
                 ? "OIDC client secret was rotated."
                 : "OIDC client secret rotation is not due.");
-        entity.UpsertCondition(
-            entity.Status.Conditions,
-            ConditionTypes.Deleting,
-            ConditionStatus.False,
-            ConditionReasons.ReconcileSucceeded,
-            "OIDC application is not being deleted.");
 
         await client.UpdateStatusAsync(entity, cancellationToken);
         logger.LogDebug("Updated OIDC application status after reconcile with application id {ApplicationId}", idpEntity.Status.ApplicationId);
@@ -91,16 +85,6 @@ public class OidcApplicationResultHandler(
                 exception.Message);
         }
 
-        if (IsDeleting(entity))
-        {
-            entity.UpsertCondition(
-                entity.Status.Conditions,
-                ConditionTypes.Deleting,
-                ConditionStatus.False,
-                ConditionReasons.DeleteFailed,
-                exception.Message);
-        }
-
         await client.UpdateStatusAsync(entity, cancellationToken);
         logger.LogDebug("Updated OIDC application status after failed operation with reason {FailureReason}", exception.Reason);
 
@@ -110,25 +94,5 @@ public class OidcApplicationResultHandler(
     public async Task HandleDeleteAsync(OidcApplication entity, IdPOidcApplication idpEntity, CancellationToken cancellationToken)
     {
         await secretService.DeleteAsync(entity, cancellationToken);
-
-        entity.Status.ObservedGeneration = entity.Metadata.Generation;
-        entity.UpsertCondition(
-            entity.Status.Conditions,
-            ConditionTypes.Deleting,
-            ConditionStatus.False,
-            idpEntity.Spec.AutoDelete ? ConditionReasons.DeleteSucceeded : ConditionReasons.DeleteSkipped,
-            idpEntity.Spec.AutoDelete
-                ? "OIDC application deletion has been handled by the identity provider."
-                : "OIDC application deletion was skipped because autoDelete is disabled.");
-
-        await client.UpdateStatusAsync(entity, cancellationToken);
-        logger.LogDebug("Updated OIDC application status after delete");
-    }
-
-    private static bool IsDeleting(OidcApplication entity)
-    {
-        return entity.Status.Conditions.Any(condition =>
-            condition.Type == ConditionTypes.Deleting
-            && condition.Status == ConditionStatus.True);
     }
 }
