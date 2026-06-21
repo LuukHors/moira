@@ -13,10 +13,11 @@ public partial class AuthentikOidcApplicationHandler(
     IHttpService<AuthentikApplicationV3, AuthentikApplicationV3, string> applicationHttpClient,
     IHttpService<AuthentikOAuth2ProviderV3, AuthentikOAuth2ProviderV3, int> providerHttpClient,
     IHttpService<AuthentikFlowV3, AuthentikFlowV3, string> flowHttpClient,
-    ILogger<AuthentikOidcApplicationHandler> logger) : IAuthentikHandler<IdPOidcApplication, AuthentikOidcApplicationV3>
+    ILogger<AuthentikOidcApplicationHandler> logger) : IAuthentikOidcApplicationHandler
 {
     private const string DefaultAuthorizationFlowSlug = "default-provider-authorization-explicit-consent";
     private const string DefaultInvalidationFlowSlug = "default-provider-invalidation-flow";
+    private static readonly IReadOnlyDictionary<string, object> DefaultAttributes = new Dictionary<string, object> { ["managed-by"] = "moira" };
 
     public async Task<AuthentikOidcApplicationV3?> GetAsync(IdPCommand<IdPOidcApplication> command, CancellationToken cancellationToken)
     {
@@ -64,6 +65,37 @@ public partial class AuthentikOidcApplicationHandler(
         logger.LogInformation("Created Authentik OIDC application {DisplayName} with application id {ApplicationId}", application.name, application.pk);
 
         return Result(command, application, provider, clientSecret, now);
+    }
+
+    public async Task<AuthentikOAuth2ProviderV3?> GetProviderAsync(
+        IdPCommand<IdPOidcApplication> command,
+        CancellationToken cancellationToken)
+    {
+        logger.LogDebug("Looking up managed Authentik OAuth2 provider by display name {DisplayName}", command.Entity.Spec.DisplayName);
+        return await providerHttpClient.GetByNameAsync(
+            command.Entity.Spec.DisplayName,
+            command.Entity.IdPProvider,
+            DefaultAttributes,
+            cancellationToken);
+    }
+
+    public async Task<AuthentikApplicationV3> CreateApplicationAsync(
+        IdPCommand<IdPOidcApplication> command,
+        AuthentikOAuth2ProviderV3 provider,
+        CancellationToken cancellationToken)
+    {
+        var application = await applicationHttpClient.CreateAsync(
+            BuildApplication(command.Entity, provider.pk, null),
+            command.Entity.IdPProvider,
+            cancellationToken);
+
+        logger.LogInformation(
+            "Created Authentik OIDC application {DisplayName} with application id {ApplicationId} and existing provider id {ProviderId}",
+            application.name,
+            application.pk,
+            provider.pk);
+
+        return application;
     }
 
     public async Task<IdPCommandResult<IdPOidcApplication>> UpdateAsync(
@@ -223,6 +255,7 @@ public partial class AuthentikOidcApplicationHandler(
             client_secret = clientSecret,
             authorization_flow = authorizationFlowId,
             invalidation_flow = invalidationFlowId,
+            attributes = DefaultAttributes,
             redirect_uris = application.Spec.RedirectUris.Select(uri => new AuthentikRedirectUriV3("strict", uri))
         };
     }
