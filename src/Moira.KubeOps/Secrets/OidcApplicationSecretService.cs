@@ -9,8 +9,8 @@ public class OidcApplicationSecretService(
     ISecretService secretService,
     ILogger<OidcApplicationSecretService> logger) : IOidcApplicationSecretService
 {
-    private const string ClientIdKey = "clientId";
-    private const string ClientSecretKey = "clientSecret";
+    private const string ClientIdKey = "ClientId";
+    private const string ClientSecretKey = "ClientSecret";
 
     public async Task<IEnumerable<OidcApplication.SecretTargetStatus>> SyncAsync(
         OidcApplication entity,

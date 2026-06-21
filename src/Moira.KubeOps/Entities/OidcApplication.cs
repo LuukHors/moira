@@ -52,8 +52,8 @@ public class OidcApplication : CustomKubernetesEntity<OidcApplication.Applicatio
 
     public class SecretTargetKeys
     {
-        public string ClientId { get; set; } = "clientId";
-        public string ClientSecret { get; set; } = "clientSecret";
+        public string ClientId { get; set; } = "ClientId";
+        public string ClientSecret { get; set; } = "ClientSecret";
     }
 
     public class SecretTargetStatus

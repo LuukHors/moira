@@ -1,0 +1,21 @@
+apiVersion: moira.operator/v1alpha1
+kind: OidcApplication
+metadata:
+  name: dev-argocd-application
+  namespace: default
+spec:
+  displayName: dev-argocd-application
+  autoDelete: true
+  providerRef:
+    name: authentik-provider
+---
+apiVersion: moira.operator/v1alpha1
+kind: OidcApplication
+metadata:
+  name: moira-test
+  namespace: default
+spec:
+  displayName: moira-test
+  autoDelete: false
+  providerRef:
+    name: authentik-provider
