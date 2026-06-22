@@ -2,6 +2,7 @@ using System.Text;
 using k8s;
 using k8s.Autorest;
 using k8s.Models;
+using KubeOps.Abstractions.Entities;
 using KubeOps.KubernetesClient;
 
 namespace Moira.KubeOps.Secrets;
@@ -40,15 +41,7 @@ public class SecretService(IKubernetesClient client) : ISecretService
     private async Task UpsertLocalSecretAsync(SecretTarget target, CancellationToken cancellationToken)
     {
         var secret = BuildSecret(target);
-        var existing = await client.GetAsync<V1Secret>(target.Name, target.Namespace, cancellationToken);
-        if (existing is null)
-        {
-            await client.CreateAsync(secret, cancellationToken);
-            return;
-        }
-
-        secret.Metadata.ResourceVersion = existing.Metadata.ResourceVersion;
-        await client.UpdateAsync(secret, cancellationToken);
+        await client.SaveAsync(secret, cancellationToken);
     }
 
     private async Task UpsertRemoteSecretAsync(SecretTarget target, CancellationToken cancellationToken)
@@ -112,7 +105,7 @@ public class SecretService(IKubernetesClient client) : ISecretService
 
     private static V1Secret BuildSecret(SecretTarget target)
     {
-        return new V1Secret
+        var secret = new V1Secret
         {
             Metadata = new V1ObjectMeta
             {
@@ -126,6 +119,13 @@ public class SecretService(IKubernetesClient client) : ISecretService
                 entry => entry.Key,
                 entry => Encoding.UTF8.GetBytes(entry.Value))
         };
+
+        if (target.Owner is not null)
+        {
+            secret.WithOwnerReference(target.Owner);
+        }
+
+        return secret;
     }
 
     private static SecretTargetStatus TargetStatus(SecretTarget target)
@@ -136,7 +136,8 @@ public class SecretService(IKubernetesClient client) : ISecretService
             Namespace = target.Namespace,
             Cluster = target.ClusterRef is null
                 ? "local"
-                : $"{target.ClusterRef.KubeConfigSecretRef.Namespace}/{target.ClusterRef.KubeConfigSecretRef.Name}"
+                : $"{target.ClusterRef.KubeConfigSecretRef.Namespace}/{target.ClusterRef.KubeConfigSecretRef.Name}",
+            ClusterRef = target.ClusterRef
         };
     }
 }
