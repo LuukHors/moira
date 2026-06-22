@@ -2,6 +2,7 @@ using k8s.Models;
 using Microsoft.Extensions.Logging;
 using Moira.Common.Models;
 using Moira.KubeOps.Entities;
+using Moira.KubeOps.Secrets.Models;
 
 namespace Moira.KubeOps.Secrets;
 
@@ -109,7 +110,7 @@ public class OidcApplicationSecretService(
         IdPOidcApplication? idpEntity = null)
     {
         var targetNamespace = string.IsNullOrWhiteSpace(secret.Namespace) ? entity.Namespace() : secret.Namespace;
-        var clusterRef = ToClusterRef(secret.ClusterRef);
+        var clusterRef = ToClusterRef(secret.ClusterSecretRef);
 
         return new SecretTarget
         {
@@ -176,7 +177,7 @@ public class OidcApplicationSecretService(
             Namespace = target.Namespace,
             Cluster = target.ClusterRef is null
                 ? "local"
-                : $"{target.ClusterRef.KubeConfigSecretRef.Namespace}/{target.ClusterRef.KubeConfigSecretRef.Name}",
+                : $"{target.ClusterRef.Namespace}/{target.ClusterRef.Name}",
             ClusterRef = ToOidcClusterRef(target.ClusterRef),
             Synced = false,
             Message = $"{messagePrefix} {exception.Message}"
@@ -186,7 +187,7 @@ public class OidcApplicationSecretService(
     private static OidcApplication? OwnerReferenceFor(
         OidcApplication entity,
         string targetNamespace,
-        ClusterRef? clusterRef)
+        ClusterSecretRef? clusterRef)
     {
         if (clusterRef is not null ||
             !string.Equals(targetNamespace, entity.Namespace(), StringComparison.Ordinal) ||
@@ -202,7 +203,7 @@ public class OidcApplicationSecretService(
     {
         var cluster = target.ClusterRef is null
             ? "local"
-            : $"remote:{target.ClusterRef.KubeConfigSecretRef.Namespace}/{target.ClusterRef.KubeConfigSecretRef.Name}/{target.ClusterRef.KubeConfigSecretRef.Key}";
+            : $"remote:{target.ClusterRef.Namespace}/{target.ClusterRef.Name}/{target.ClusterRef.Key}";
 
         return $"{cluster}/{target.Namespace}/{target.Name}";
     }
@@ -211,7 +212,7 @@ public class OidcApplicationSecretService(
     {
         if (status.ClusterRef is not null)
         {
-            return $"remote:{status.ClusterRef.KubeConfigSecretRef.Namespace}/{status.ClusterRef.KubeConfigSecretRef.Name}/{status.ClusterRef.KubeConfigSecretRef.Key}/{status.Namespace}/{status.Name}";
+            return $"remote:{status.ClusterRef.Namespace}/{status.ClusterRef.Name}/{status.ClusterRef.Key}/{status.Namespace}/{status.Name}";
         }
 
         if (string.IsNullOrWhiteSpace(status.Cluster) ||
@@ -244,39 +245,33 @@ public class OidcApplicationSecretService(
         return false;
     }
 
-    private static OidcApplication.ClusterRef? ToOidcClusterRef(ClusterRef? clusterRef)
+    private static OidcApplication.ClusterSecretRef? ToOidcClusterRef(ClusterSecretRef? clusterRef)
     {
         if (clusterRef is null)
         {
             return null;
         }
 
-        return new OidcApplication.ClusterRef
-        {
-            KubeConfigSecretRef = new OidcApplication.KubeConfigSecretRef
-            {
-                Name = clusterRef.KubeConfigSecretRef.Name,
-                Namespace = clusterRef.KubeConfigSecretRef.Namespace,
-                Key = clusterRef.KubeConfigSecretRef.Key
-            }
+        return new OidcApplication.ClusterSecretRef
+        { 
+            Name = clusterRef.Name,
+            Namespace = clusterRef.Namespace,
+            Key = clusterRef.Key
         };
     }
 
-    private static ClusterRef? ToClusterRef(OidcApplication.ClusterRef? clusterRef)
+    private static ClusterSecretRef? ToClusterRef(OidcApplication.ClusterSecretRef? clusterRef)
     {
         if (clusterRef is null)
         {
             return null;
         }
 
-        return new ClusterRef
+        return new ClusterSecretRef
         {
-            KubeConfigSecretRef = new KubeConfigSecretRef
-            {
-                Name = clusterRef.KubeConfigSecretRef.Name,
-                Namespace = clusterRef.KubeConfigSecretRef.Namespace,
-                Key = clusterRef.KubeConfigSecretRef.Key
-            }
+            Name = clusterRef.Name,
+            Namespace = clusterRef.Namespace,
+            Key = clusterRef.Key
         };
     }
 }

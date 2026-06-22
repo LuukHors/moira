@@ -48,15 +48,15 @@ internal class OIDCApplicationValidator : AbstractValidator<OidcApplication>
                         .WithMessage("Secret template value should not be empty");
                 });
             });
-            secret.When(t => t.ClusterRef is not null, () =>
+            secret.When(t => t.ClusterSecretRef is not null, () =>
             {
-                secret.RuleFor(t => t.ClusterRef!.KubeConfigSecretRef.Name)
+                secret.RuleFor(t => t.ClusterSecretRef!.Name)
                     .NotEmpty()
                     .WithMessage("Remote secrets should set clusterRef.kubeConfigSecretRef.name");
-                secret.RuleFor(t => t.ClusterRef!.KubeConfigSecretRef.Namespace)
+                secret.RuleFor(t => t.ClusterSecretRef!.Namespace)
                     .NotEmpty()
                     .WithMessage("Remote secrets should set clusterRef.kubeConfigSecretRef.namespace");
-                secret.RuleFor(t => t.ClusterRef!.KubeConfigSecretRef.Key)
+                secret.RuleFor(t => t.ClusterSecretRef!.Key)
                     .NotEmpty()
                     .WithMessage("Remote secrets should set clusterRef.kubeConfigSecretRef.key");
             });
@@ -72,9 +72,9 @@ internal class OIDCApplicationValidator : AbstractValidator<OidcApplication>
 
         var keys = secrets.Select(secret =>
         {
-            var cluster = secret.ClusterRef is null
+            var cluster = secret.ClusterSecretRef is null
                 ? "local"
-                : $"{secret.ClusterRef.KubeConfigSecretRef.Namespace}/{secret.ClusterRef.KubeConfigSecretRef.Name}/{secret.ClusterRef.KubeConfigSecretRef.Key}";
+                : $"{secret.ClusterSecretRef.Namespace}/{secret.ClusterSecretRef.Name}/{secret.ClusterSecretRef.Key}";
             return $"{cluster}/{secret.Namespace}/{secret.Name}";
         });
 

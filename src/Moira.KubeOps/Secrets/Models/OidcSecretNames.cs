@@ -1,7 +1,7 @@
 using k8s.Models;
 using Moira.KubeOps.Entities;
 
-namespace Moira.KubeOps.Secrets;
+namespace Moira.KubeOps.Secrets.Models;
 
 internal static class OidcSecretNames
 {

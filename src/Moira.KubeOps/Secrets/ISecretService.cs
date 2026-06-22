@@ -1,3 +1,5 @@
+using Moira.KubeOps.Secrets.Models;
+
 namespace Moira.KubeOps.Secrets;
 
 public interface ISecretService
