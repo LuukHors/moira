@@ -6,6 +6,7 @@ using Moira.Common.Exceptions;
 using Moira.Common.Models;
 using Moira.KubeOps.Entities;
 using Moira.KubeOps.Secrets;
+using Moira.KubeOps.Secrets.Models;
 using Provider = Moira.KubeOps.Entities.Provider;
 
 namespace Moira.KubeOps.AdapterHandler.DependencyProvider;

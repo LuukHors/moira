@@ -1,6 +1,6 @@
-namespace Moira.KubeOps.Secrets;
+namespace Moira.KubeOps.Secrets.Models;
 
-public class KubeConfigSecretRef
+public class ClusterSecretRef
 {
     public string Name { get; set; } = string.Empty;
     public string Namespace { get; set; } = string.Empty;

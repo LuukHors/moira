@@ -4,6 +4,7 @@ using k8s.Autorest;
 using k8s.Models;
 using KubeOps.Abstractions.Entities;
 using KubeOps.KubernetesClient;
+using Moira.KubeOps.Secrets.Models;
 
 namespace Moira.KubeOps.Secrets;
 
@@ -46,7 +47,7 @@ public class SecretService(IKubernetesClient client) : ISecretService
 
     private async Task UpsertRemoteSecretAsync(SecretTarget target, CancellationToken cancellationToken)
     {
-        using var remoteClient = await BuildRemoteClientAsync(target.ClusterRef!.KubeConfigSecretRef, cancellationToken);
+        using var remoteClient = await BuildRemoteClientAsync(target.ClusterRef!, cancellationToken);
         var secret = BuildSecret(target);
 
         try
@@ -72,7 +73,7 @@ public class SecretService(IKubernetesClient client) : ISecretService
 
     private async Task DeleteRemoteSecretAsync(SecretTarget target, CancellationToken cancellationToken)
     {
-        using var remoteClient = await BuildRemoteClientAsync(target.ClusterRef!.KubeConfigSecretRef, cancellationToken);
+        using var remoteClient = await BuildRemoteClientAsync(target.ClusterRef!, cancellationToken);
         try
         {
             await remoteClient.DeleteNamespacedSecretAsync(target.Name, target.Namespace, cancellationToken: cancellationToken);
@@ -83,23 +84,23 @@ public class SecretService(IKubernetesClient client) : ISecretService
     }
 
     private async Task<Kubernetes> BuildRemoteClientAsync(
-        KubeConfigSecretRef kubeConfigSecretRef,
+        ClusterSecretRef clusterSecretRef,
         CancellationToken cancellationToken)
     {
         var kubeConfigSecret = await client.GetAsync<V1Secret>(
-            kubeConfigSecretRef.Name,
-            kubeConfigSecretRef.Namespace,
+            clusterSecretRef.Name,
+            clusterSecretRef.Namespace,
             cancellationToken);
 
         if (kubeConfigSecret?.Data is null ||
-            !kubeConfigSecret.Data.TryGetValue(kubeConfigSecretRef.Key, out var kubeConfigBytes))
+            !kubeConfigSecret.Data.TryGetValue(clusterSecretRef.Key, out var kubeConfigBytes))
         {
             throw new InvalidOperationException(
-                $"Kubeconfig secret key '{kubeConfigSecretRef.Namespace}/{kubeConfigSecretRef.Name}:{kubeConfigSecretRef.Key}' was not found.");
+                $"Kubeconfig secret key '{clusterSecretRef.Namespace}/{clusterSecretRef.Name}:{clusterSecretRef.Key}' was not found.");
         }
 
         await using var stream = new MemoryStream(kubeConfigBytes);
-        var config = KubernetesClientConfiguration.BuildConfigFromConfigFile(stream);
+        var config = await KubernetesClientConfiguration.BuildConfigFromConfigFileAsync(stream);
         return new Kubernetes(config);
     }
 
@@ -136,7 +137,7 @@ public class SecretService(IKubernetesClient client) : ISecretService
             Namespace = target.Namespace,
             Cluster = target.ClusterRef is null
                 ? "local"
-                : $"{target.ClusterRef.KubeConfigSecretRef.Namespace}/{target.ClusterRef.KubeConfigSecretRef.Name}",
+                : $"{target.ClusterRef.Namespace}/{target.ClusterRef.Name}",
             ClusterRef = target.ClusterRef
         };
     }

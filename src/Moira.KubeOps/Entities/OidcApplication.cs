@@ -31,19 +31,14 @@ public class OidcApplication : CustomKubernetesEntity<OidcApplication.Applicatio
     {
         public string Name { get; set; } = string.Empty;
         public string Namespace { get; set; } = string.Empty;
-        public ClusterRef? ClusterRef { get; set; }
+        public ClusterSecretRef? ClusterSecretRef { get; set; }
         public string Type { get; set; } = "Opaque";
         public IDictionary<string, string> Labels { get; set; } = new Dictionary<string, string>();
         public IDictionary<string, string> Annotations { get; set; } = new Dictionary<string, string>();
         public IDictionary<string, string> Template { get; set; } = new Dictionary<string, string>();
     }
 
-    public class ClusterRef
-    {
-        public KubeConfigSecretRef KubeConfigSecretRef { get; set; } = new();
-    }
-
-    public class KubeConfigSecretRef
+    public class ClusterSecretRef
     {
         public string Name { get; set; } = string.Empty;
         public string Namespace { get; set; } = string.Empty;
@@ -55,7 +50,7 @@ public class OidcApplication : CustomKubernetesEntity<OidcApplication.Applicatio
         public string Name { get; set; } = string.Empty;
         public string Namespace { get; set; } = string.Empty;
         public string Cluster { get; set; } = "local";
-        public ClusterRef? ClusterRef { get; set; }
+        public ClusterSecretRef? ClusterRef { get; set; }
         public DateTime? LastSyncedAt { get; set; }
         public bool Synced { get; set; }
         public string Message { get; set; } = string.Empty;
