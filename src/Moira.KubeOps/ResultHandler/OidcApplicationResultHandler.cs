@@ -24,6 +24,7 @@ public class OidcApplicationResultHandler(
         entity.Status.ObservedGeneration = entity.Metadata.Generation;
         entity.Status.ApplicationId = idpEntity.Status.ApplicationId;
         entity.Status.ClientId = idpEntity.Status.ClientId;
+        entity.Status.ProviderResourceIds = idpEntity.Status.ProviderResourceIds;
         entity.Status.LastRotatedAt = idpEntity.Status.LastRotatedAt;
         entity.Status.NextRotationAt = idpEntity.Status.NextRotationAt;
         entity.Status.Secrets = secretTargetStatuses;

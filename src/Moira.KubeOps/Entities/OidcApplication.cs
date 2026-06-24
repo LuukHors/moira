@@ -10,6 +10,7 @@ public class OidcApplication : CustomKubernetesEntity<OidcApplication.Applicatio
     {
         public string DisplayName { get; set; } = string.Empty;
         public ProviderRef ProviderRef { get; set; } = new();
+        public ResourceRef? ProviderSettingsRef { get; set; }
         public bool AutoDelete { get; set; } = true;
         public OidcSpec Oidc { get; set; } = new();
         public IEnumerable<Secret> Secrets { get; set; } = [];
@@ -20,6 +21,7 @@ public class OidcApplication : CustomKubernetesEntity<OidcApplication.Applicatio
     {
         public string ApplicationId { get; set; } = string.Empty;
         public string ClientId { get; set; } = string.Empty;
+        public IReadOnlyDictionary<string, string> ProviderResourceIds { get; set; } = new Dictionary<string, string>();
         public long? ObservedGeneration { get; set; } = 0;
         public DateTime? LastRotatedAt { get; set; }
         public DateTime? NextRotationAt { get; set; }

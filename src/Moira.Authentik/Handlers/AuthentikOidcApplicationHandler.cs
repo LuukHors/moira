@@ -17,6 +17,7 @@ public partial class AuthentikOidcApplicationHandler(
 {
     private const string DefaultAuthorizationFlowSlug = "default-provider-authorization-explicit-consent";
     private const string DefaultInvalidationFlowSlug = "default-provider-invalidation-flow";
+    private const string DefaultRedirectUriMatchingMode = "strict";
     private static readonly IReadOnlyDictionary<string, object> DefaultAttributes = new Dictionary<string, object> { ["managed-by"] = "moira" };
 
     public async Task<AuthentikOidcApplicationV3?> GetAsync(IdPCommand<IdPOidcApplication> command, CancellationToken cancellationToken)
@@ -62,7 +63,7 @@ public partial class AuthentikOidcApplicationHandler(
         CancellationToken cancellationToken)
     {
         var clientId = GenerateToken(24);
-        var clientSecret = GenerateToken(48);
+        var clientSecret = command.Entity.Spec.UsesClientSecret ? GenerateToken(48) : string.Empty;
         
         var provider = await providerHttpClient.CreateAsync(
             await BuildProviderAsync(command.Entity, clientId, clientSecret, null, cancellationToken),
@@ -81,8 +82,12 @@ public partial class AuthentikOidcApplicationHandler(
         var clientId = string.IsNullOrEmpty(command.Entity.Status.ClientId)
             ? current.Provider?.client_id ?? GenerateToken(24)
             : command.Entity.Status.ClientId;
-        var shouldRotate = command.Entity.Spec.RotateClientSecret || string.IsNullOrEmpty(command.Entity.ClientSecret);
-        var clientSecret = shouldRotate ? GenerateToken(48) : command.Entity.ClientSecret;
+        var usesClientSecret = command.Entity.Spec.UsesClientSecret;
+        var shouldRotate = usesClientSecret &&
+                           (command.Entity.Spec.RotateClientSecret || string.IsNullOrEmpty(command.Entity.ClientSecret));
+        var clientSecret = usesClientSecret
+            ? shouldRotate ? GenerateToken(48) : command.Entity.ClientSecret
+            : string.Empty;
 
         var desiredProvider = await BuildProviderAsync(
             command.Entity,
@@ -204,25 +209,41 @@ public partial class AuthentikOidcApplicationHandler(
         int? providerId,
         CancellationToken cancellationToken)
     {
+        ValidateSupportedCoreProperties(application);
+
+        var authorizationFlowSlug = application.Spec.ProviderSettings?.GetValueOrDefault(
+            "authorizationFlowSlug",
+            DefaultAuthorizationFlowSlug) ?? DefaultAuthorizationFlowSlug;
+        var invalidationFlowSlug = application.Spec.ProviderSettings?.GetValueOrDefault(
+            "invalidationFlowSlug",
+            DefaultInvalidationFlowSlug) ?? DefaultInvalidationFlowSlug;
+        var redirectUriMatchingMode = application.Spec.ProviderSettings?.GetValueOrDefault(
+            "redirectUriMatchingMode",
+            DefaultRedirectUriMatchingMode) ?? DefaultRedirectUriMatchingMode;
+
         var authorizationFlowId = await GetFlowIdAsync(
             application.IdPProvider,
-            DefaultAuthorizationFlowSlug,
+            authorizationFlowSlug,
             cancellationToken);
         var invalidationFlowId = await GetFlowIdAsync(
             application.IdPProvider,
-            DefaultInvalidationFlowSlug,
+            invalidationFlowSlug,
             cancellationToken);
 
         return new AuthentikOAuth2ProviderV3
         {
             name = application.Spec.DisplayName,
             pk = providerId,
+            client_type = application.Spec.UsesClientSecret ? "confidential" : "public",
             client_id = clientId,
-            client_secret = clientSecret,
+            client_secret = application.Spec.UsesClientSecret ? clientSecret : string.Empty,
             authorization_flow = authorizationFlowId,
             invalidation_flow = invalidationFlowId,
             attributes = DefaultAttributes,
-            redirect_uris = application.Spec.RedirectUris.Select(uri => new AuthentikRedirectUriV3("strict", uri))
+            redirect_uris = application.Spec.RedirectUris
+                .Select(uri => new AuthentikRedirectUriV3(redirectUriMatchingMode, uri))
+                .Concat(application.Spec.PostLogoutRedirectUris.Select(
+                    uri => new AuthentikRedirectUriV3(redirectUriMatchingMode, uri, "post_logout")))
         };
     }
 
@@ -267,6 +288,9 @@ public partial class AuthentikOidcApplicationHandler(
         if (!desired.client_id.Equals(current.client_id))
             return true;
 
+        if (!desired.client_type.Equals(current.client_type))
+            return true;
+
         if (shouldRotate)
             return true;
 
@@ -284,6 +308,48 @@ public partial class AuthentikOidcApplicationHandler(
             .ToHashSet();
 
         return !desiredRedirectUris.SetEquals(currentRedirectUris);
+    }
+
+    private static void ValidateSupportedCoreProperties(IdPOidcApplication application)
+    {
+        if (!application.Spec.Scopes.SequenceEqual(new[] { "openid" }, StringComparer.OrdinalIgnoreCase))
+        {
+            throw new IdPException(
+                "Authentik OIDC application support currently only reconciles the default \"openid\" scope.",
+                IdPExceptionReason.IdpValidationFailed);
+        }
+
+        if (!application.Spec.GrantTypes.SequenceEqual(new[] { "authorization_code" }, StringComparer.OrdinalIgnoreCase))
+        {
+            throw new IdPException(
+                "Authentik OIDC application support currently only reconciles the \"authorization_code\" grant type.",
+                IdPExceptionReason.IdpValidationFailed);
+        }
+
+        if (!application.Spec.ResponseTypes.SequenceEqual(new[] { "code" }, StringComparer.OrdinalIgnoreCase))
+        {
+            throw new IdPException(
+                "Authentik OIDC application support currently only reconciles the \"code\" response type.",
+                IdPExceptionReason.IdpValidationFailed);
+        }
+
+        if (application.Spec.ClientAuthenticationMethod.Equals(OidcClientAuthenticationMethod.ClientSecretPost, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new IdPException(
+                "Authentik OIDC application support currently does not reconcile the \"client_secret_post\" client authentication method.",
+                IdPExceptionReason.IdpValidationFailed);
+        }
+
+        if (!string.IsNullOrWhiteSpace(application.Spec.ClientUri) ||
+            !string.IsNullOrWhiteSpace(application.Spec.LogoUri) ||
+            !string.IsNullOrWhiteSpace(application.Spec.PolicyUri) ||
+            !string.IsNullOrWhiteSpace(application.Spec.TermsOfServiceUri) ||
+            application.Spec.Contacts.Any())
+        {
+            throw new IdPException(
+                "Authentik OIDC application support currently does not reconcile OIDC client metadata fields such as clientUri, logoUri, policyUri, termsOfServiceUri or contacts.",
+                IdPExceptionReason.IdpValidationFailed);
+        }
     }
 
     private static bool ShouldUpdate(AuthentikApplicationV3 current, AuthentikApplicationV3 desired)
@@ -307,8 +373,13 @@ public partial class AuthentikOidcApplicationHandler(
                 new IdPOidcApplicationStatus(
                     application.slug,
                     provider.client_id,
-                    lastRotatedAt,
-                    lastRotatedAt.AddDays(command.Entity.Spec.RotationDays)),
+                    command.Entity.Spec.UsesClientSecret ? lastRotatedAt : null,
+                    command.Entity.Spec.UsesClientSecret ? lastRotatedAt.AddDays(command.Entity.Spec.RotationDays) : null,
+                    new Dictionary<string, string>
+                    {
+                        ["authentikApplicationSlug"] = application.slug,
+                        ["authentikOAuth2ProviderId"] = provider.pk?.ToString() ?? string.Empty
+                    }),
                 clientSecret));
     }
 

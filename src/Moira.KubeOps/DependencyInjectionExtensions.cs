@@ -23,6 +23,7 @@ public static class DependencyInjectionExtensions
         services.AddScoped<IAdapterHandler<Provider>, AdapterHandler<Provider, IdPProvider>>();
         services.AddScoped<ISecretService, SecretService>();
         services.AddScoped<IOidcApplicationSecretService, OidcApplicationSecretService>();
+        services.AddScoped<AbstractValidator<AuthentikOidcApplicationSettings>, AuthentikOidcApplicationSettingsValidator>();
         services.AddScoped<AbstractValidator<Group>, GroupValidator>();
         services.AddScoped<AbstractValidator<OidcApplication>, OIDCApplicationValidator>();
         services.AddScoped<AbstractValidator<Provider>, ProviderValidator>();
