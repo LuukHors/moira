@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Moira.Common.Models;
 using Moira.KubeOps.AdapterHandler;
 using Moira.KubeOps.AdapterHandler.DependencyProvider;
+using Moira.KubeOps.AdapterHandler.DependencyProvider.OidcProviderSettings;
 using Moira.KubeOps.Entities;
 using Moira.KubeOps.Entities.Validators;
 using Moira.KubeOps.PreReconcileSteps;
@@ -23,6 +24,7 @@ public static class DependencyInjectionExtensions
         services.AddScoped<IAdapterHandler<Provider>, AdapterHandler<Provider, IdPProvider>>();
         services.AddScoped<ISecretService, SecretService>();
         services.AddScoped<IOidcApplicationSecretService, OidcApplicationSecretService>();
+        services.AddScoped<IOidcProviderSettingsService, OidcProviderSettingsService>();
         services.AddScoped<AbstractValidator<AuthentikOidcApplicationSettings>, AuthentikOidcApplicationSettingsValidator>();
         services.AddScoped<AbstractValidator<Group>, GroupValidator>();
         services.AddScoped<AbstractValidator<OidcApplication>, OIDCApplicationValidator>();
@@ -37,6 +39,8 @@ public static class DependencyInjectionExtensions
             .AsSelfWithInterfaces()
             .AddClasses(c => c.AssignableTo(typeof(IDependencyProvider<,>)))
             .AsSelfWithInterfaces()
+            .AddClasses(c => c.AssignableTo(typeof(IOidcProviderSettingsResolver)))
+            .AsImplementedInterfaces()
             .WithScopedLifetime());
     }
 }

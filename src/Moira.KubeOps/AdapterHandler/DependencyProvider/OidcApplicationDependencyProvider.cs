@@ -4,6 +4,7 @@ using KubeOps.KubernetesClient;
 using Microsoft.Extensions.Logging;
 using Moira.Common.Exceptions;
 using Moira.Common.Models;
+using Moira.KubeOps.AdapterHandler.DependencyProvider.OidcProviderSettings;
 using Moira.KubeOps.Entities;
 using Moira.KubeOps.Secrets;
 using Moira.KubeOps.Secrets.Models;
@@ -14,6 +15,7 @@ namespace Moira.KubeOps.AdapterHandler.DependencyProvider;
 public class OidcApplicationDependencyProvider(
     IKubernetesClient client,
     IDependencyProvider<Provider, IdPProvider> providerDependencyProvider,
+    IOidcProviderSettingsService providerSettingsService,
     ILogger<OidcApplicationDependencyProvider> logger) : IDependencyProvider<OidcApplication, IdPOidcApplication>
 {
     public async Task<IdPOidcApplication> ResolveAsync(OidcApplication entity, CancellationToken cancellationToken)
@@ -38,7 +40,7 @@ public class OidcApplicationDependencyProvider(
         }
 
         var idPProvider = await providerDependencyProvider.ResolveAsync(provider, cancellationToken);
-        var providerSettings = await ResolveProviderSettingsAsync(entity, idPProvider, cancellationToken);
+        var providerSettings = await providerSettingsService.ResolveAsync(entity, idPProvider, cancellationToken);
         logger.LogDebug(
             "Resolved provider {ProviderNamespace}/{ProviderName} for OIDC application",
             entity.Spec.ProviderRef.Namespace,
@@ -89,59 +91,5 @@ public class OidcApplicationDependencyProvider(
                 entity.Status.NextRotationAt,
                 entity.Status.ProviderResourceIds),
             clientSecret);
-    }
-
-    private async Task<OidcProviderSettings?> ResolveProviderSettingsAsync(
-        OidcApplication entity,
-        IdPProvider provider,
-        CancellationToken cancellationToken)
-    {
-        if (entity.Spec.ProviderSettingsRef is null)
-        {
-            return null;
-        }
-
-        var settingsRef = entity.Spec.ProviderSettingsRef;
-        var settingsNamespace = string.IsNullOrWhiteSpace(settingsRef.Namespace)
-            ? entity.Namespace()
-            : settingsRef.Namespace;
-
-        if (!settingsRef.ApiVersion.Equals("moira.operator/v1alpha1", StringComparison.OrdinalIgnoreCase))
-        {
-            throw new ProviderSettingsException(
-                $"Unsupported providerSettingsRef apiVersion \"{settingsRef.ApiVersion}\" for OIDC application \"{entity.Name()}\".");
-        }
-
-        if (provider.Type.Equals(ProviderType.Authentik.ToString(), StringComparison.OrdinalIgnoreCase))
-        {
-            if (!settingsRef.Kind.Equals("AuthentikOidcApplicationSettings", StringComparison.OrdinalIgnoreCase))
-            {
-                throw new ProviderSettingsException(
-                    $"Provider \"{provider.Name}\" has type \"{provider.Type}\" and requires providerSettingsRef.kind \"AuthentikOidcApplicationSettings\".");
-            }
-
-            var settings = await client.GetAsync<AuthentikOidcApplicationSettings>(
-                settingsRef.Name,
-                settingsNamespace,
-                cancellationToken);
-
-            if (settings is null)
-            {
-                throw new ProviderSettingsException(
-                    $"Unable to get AuthentikOidcApplicationSettings with name \"{settingsRef.Name}\" in namespace \"{settingsNamespace}\".");
-            }
-
-            return new OidcProviderSettings(
-                settingsRef.Kind,
-                new Dictionary<string, string>
-                {
-                    ["authorizationFlowSlug"] = settings.Spec.AuthorizationFlowSlug,
-                    ["invalidationFlowSlug"] = settings.Spec.InvalidationFlowSlug,
-                    ["redirectUriMatchingMode"] = settings.Spec.RedirectUriMatchingMode
-                });
-        }
-
-        throw new ProviderSettingsException(
-            $"Provider type \"{provider.Type}\" does not support providerSettingsRef on OIDC applications.");
     }
 }
