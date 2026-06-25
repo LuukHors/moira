@@ -9,6 +9,7 @@ public enum MoiraExceptionReason
     SecretKeyMissing,
     ProviderMissing,
     ProviderAdapterMissing,
+    ValidationFailed,
     UnsupportedProvider,
     UnknownError
 }
