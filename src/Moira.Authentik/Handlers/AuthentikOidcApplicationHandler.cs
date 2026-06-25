@@ -279,7 +279,7 @@ public partial class AuthentikOidcApplicationHandler(
             Slug(application.Name),
             applicationPk,
             providerId,
-            string.IsNullOrWhiteSpace(application.Spec.LaunchUrl) ? null : application.Spec.LaunchUrl);
+            NormalizeLaunchUrl(application.Spec.LaunchUrl));
     }
 
     private static bool ShouldUpdate(
@@ -399,8 +399,8 @@ public partial class AuthentikOidcApplicationHandler(
                || !string.Equals(desired.slug, current.slug, StringComparison.Ordinal)
                || !desired.provider.Equals(current.provider)
                || !string.Equals(
-                   NormalizeOptionalText(desired.launch_url),
-                   NormalizeOptionalText(current.launch_url),
+                   NormalizeLaunchUrl(desired.launch_url),
+                   NormalizeLaunchUrl(current.launch_url),
                    StringComparison.Ordinal);
     }
 
@@ -431,6 +431,12 @@ public partial class AuthentikOidcApplicationHandler(
     private static string NormalizeOptionalText(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? string.Empty : value;
+    }
+
+    private static string NormalizeLaunchUrl(string? value)
+    {
+        var normalized = NormalizeOptionalText(value);
+        return normalized.Length == 0 ? normalized : normalized.TrimEnd('/');
     }
 
     private static string NormalizeRequiredText(string? value)
