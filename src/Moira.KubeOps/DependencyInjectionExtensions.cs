@@ -33,7 +33,10 @@ public static class DependencyInjectionExtensions
         services.AddScoped<IOidcApplicationSecretService, OidcApplicationSecretService>();
         services.AddScoped<IOidcProviderSettingsService, OidcProviderSettingsService>();
         services.AddScoped<IOidcProviderSettingsResolver, AuthentikOidcProviderSettingsResolver>();
-        services.AddScoped(typeof(IValidatorExecutor<>), typeof(ValidatorExecutor<>));
+        services.AddScoped<IValidatorExecutor<AuthentikOidcApplicationSettings>, ValidatorExecutor<AuthentikOidcApplicationSettings>>();
+        services.AddScoped<IValidatorExecutor<Group>, ValidatorExecutor<Group>>();
+        services.AddScoped<IValidatorExecutor<OidcApplication>, ValidatorExecutor<OidcApplication>>();
+        services.AddScoped<IValidatorExecutor<Provider>, ValidatorExecutor<Provider>>();
         services.AddScoped<AbstractValidator<AuthentikOidcApplicationSettings>, AuthentikOidcApplicationSettingsValidator>();
         services.AddScoped<AbstractValidator<Group>, GroupValidator>();
         services.AddScoped<AbstractValidator<OidcApplication>, OIDCApplicationValidator>();
