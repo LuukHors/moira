@@ -240,7 +240,6 @@ public partial class AuthentikOidcApplicationHandler(
             name = application.Spec.DisplayName,
             pk = providerId,
             client_type = application.Spec.UsesClientSecret ? "confidential" : "public",
-            grant_types = ToAuthentikGrantTypes(application),
             client_id = clientId,
             client_secret = application.Spec.UsesClientSecret ? clientSecret : string.Empty,
             authorization_flow = authorizationFlowTask.Result,
@@ -298,11 +297,6 @@ public partial class AuthentikOidcApplicationHandler(
         if (!string.Equals(desired.client_type, current.client_type, StringComparison.OrdinalIgnoreCase))
             return true;
 
-        var desiredGrantTypes = ToStringSet(desired.grant_types);
-        var currentGrantTypes = ToStringSet(current.grant_types);
-        if (!desiredGrantTypes.SetEquals(currentGrantTypes))
-            return true;
-
         if (shouldRotate)
             return true;
 
@@ -345,32 +339,6 @@ public partial class AuthentikOidcApplicationHandler(
                 "Authentik OIDC application support currently does not reconcile OIDC client metadata fields such as clientUri, logoUri, policyUri, termsOfServiceUri or contacts.",
                 IdPExceptionReason.IdpValidationFailed);
         }
-    }
-
-    private static IEnumerable<string> ToAuthentikGrantTypes(IdPOidcApplication application)
-    {
-        var grantTypes = application.Spec.GrantTypes.ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var responseType in application.Spec.ResponseTypes.Select(NormalizeResponseType))
-        {
-            switch (responseType)
-            {
-                case "code":
-                    grantTypes.Add("authorization_code");
-                    break;
-                case "id_token":
-                case "id_token token":
-                    grantTypes.Add("implicit");
-                    break;
-                case "code token":
-                case "code id_token":
-                case "code id_token token":
-                    grantTypes.Add("hybrid");
-                    break;
-            }
-        }
-
-        return grantTypes.Order(StringComparer.OrdinalIgnoreCase);
     }
 
     private async Task<IEnumerable<string>> ResolveScopeMappingIdsAsync(
@@ -420,18 +388,6 @@ public partial class AuthentikOidcApplicationHandler(
         return matches[0].pk;
     }
 
-    private static string NormalizeResponseType(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return string.Empty;
-        }
-
-        return string.Join(
-            ' ',
-            value.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
-    }
-
     private static bool ShouldUpdate(AuthentikApplicationV3 current, AuthentikApplicationV3 desired)
     {
         return !string.Equals(desired.name, current.name, StringComparison.Ordinal)
@@ -441,13 +397,6 @@ public partial class AuthentikOidcApplicationHandler(
                    NormalizeOptionalText(desired.launch_url),
                    NormalizeOptionalText(current.launch_url),
                    StringComparison.Ordinal);
-    }
-
-    private static ISet<string> ToStringSet(IEnumerable<string>? values)
-    {
-        return (values ?? [])
-            .Where(value => !string.IsNullOrWhiteSpace(value))
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
     }
 
     private static ISet<string> ToAuthentikReferenceIdSet(IEnumerable<object>? values)
