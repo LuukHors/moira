@@ -2,7 +2,7 @@ namespace Moira.Common.Models;
 
 public record IdPOidcApplicationSpec(
     string DisplayName,
-    string ApplicationType,
+    OidcApplicationType ApplicationType,
     IEnumerable<string> RedirectUris,
     IEnumerable<string> PostLogoutRedirectUris,
     string LaunchUrl,

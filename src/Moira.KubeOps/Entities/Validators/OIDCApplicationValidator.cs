@@ -5,12 +5,6 @@ namespace Moira.KubeOps.Entities.Validators;
 
 internal class OIDCApplicationValidator : AbstractValidator<OidcApplication>
 {
-    private static readonly ISet<string> ApplicationTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-    {
-        OidcApplicationType.Web,
-        OidcApplicationType.Native
-    };
-
     private static readonly ISet<string> GrantTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         "authorization_code",
@@ -71,8 +65,8 @@ internal class OIDCApplicationValidator : AbstractValidator<OidcApplication>
             .NotNull()
             .WithMessage("The \"oidc\" property should be set");
         RuleFor(a => a.Spec.Oidc.ApplicationType)
-            .Must(t => ApplicationTypes.Contains(t))
-            .WithMessage("The \"oidc.applicationType\" property should be either \"web\" or \"native\"");
+            .Must(t => t != OidcApplicationType.Unknown && Enum.IsDefined(t))
+            .WithMessage("The \"oidc.applicationType\" property should be either \"Web\" or \"Native\"");
         RuleFor(a => a.Spec.Oidc.ClientAuthenticationMethod)
             .Must(t => t != OidcClientAuthenticationMethod.Unknown && Enum.IsDefined(t))
             .WithMessage("The \"oidc.clientAuthenticationMethod\" property should be \"ClientSecretBasic\", \"ClientSecretPost\" or \"None\"");

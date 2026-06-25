@@ -1,7 +1,8 @@
 namespace Moira.Common.Models;
 
-public static class OidcApplicationType
+public enum OidcApplicationType
 {
-    public const string Web = "web";
-    public const string Native = "native";
+    Unknown = 0,
+    Web,
+    Native
 }

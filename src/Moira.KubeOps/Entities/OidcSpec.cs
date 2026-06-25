@@ -4,7 +4,7 @@ namespace Moira.KubeOps.Entities;
 
 public class OidcSpec
 {
-    public string ApplicationType { get; set; } = "web";
+    public OidcApplicationType ApplicationType { get; set; } = OidcApplicationType.Native;
     public IEnumerable<string> RedirectUris { get; set; } = [];
     public IEnumerable<string> PostLogoutRedirectUris { get; set; } = [];
     public string LaunchUrl { get; set; } = string.Empty;
