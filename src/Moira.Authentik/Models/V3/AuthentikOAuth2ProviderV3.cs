@@ -11,6 +11,6 @@ public record AuthentikOAuth2ProviderV3
     public string authorization_flow { get; set; } = string.Empty;
     public string invalidation_flow { get; set; } = string.Empty;
     public IReadOnlyDictionary<string, object> attributes { get; set; } = new Dictionary<string, object>();
-    public IEnumerable<string> property_mappings { get; set; } = [];
+    public IEnumerable<object> property_mappings { get; set; } = [];
     public IEnumerable<AuthentikRedirectUriV3> redirect_uris { get; set; } = [];
 }

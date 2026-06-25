@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Moira.Authentik.HttpService;
@@ -245,7 +246,7 @@ public partial class AuthentikOidcApplicationHandler(
             authorization_flow = authorizationFlowTask.Result,
             invalidation_flow = invalidationFlowTask.Result,
             attributes = DefaultAttributes,
-            property_mappings = scopeMappingIdsTask.Result,
+            property_mappings = scopeMappingIdsTask.Result.Cast<object>().ToArray(),
             redirect_uris = application.Spec.RedirectUris
                 .Select(uri => new AuthentikRedirectUriV3(redirectUriMatchingMode, uri))
                 .Concat(application.Spec.PostLogoutRedirectUris.Select(
@@ -288,17 +289,17 @@ public partial class AuthentikOidcApplicationHandler(
         AuthentikOAuth2ProviderV3 desired,
         bool shouldRotate)
     {
-        if (!desired.name.Equals(current.name))
+        if (!string.Equals(desired.name, current.name, StringComparison.Ordinal))
             return true;
 
-        if (!desired.client_id.Equals(current.client_id))
+        if (!string.Equals(desired.client_id, current.client_id, StringComparison.Ordinal))
             return true;
 
-        if (!desired.client_type.Equals(current.client_type))
+        if (!string.Equals(desired.client_type, current.client_type, StringComparison.OrdinalIgnoreCase))
             return true;
 
-        var desiredGrantTypes = desired.grant_types.ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var currentGrantTypes = current.grant_types.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var desiredGrantTypes = ToStringSet(desired.grant_types);
+        var currentGrantTypes = ToStringSet(current.grant_types);
         if (!desiredGrantTypes.SetEquals(currentGrantTypes))
             return true;
 
@@ -311,16 +312,22 @@ public partial class AuthentikOidcApplicationHandler(
         if (!string.Equals(desired.invalidation_flow, current.invalidation_flow, StringComparison.Ordinal))
             return true;
 
-        var desiredPropertyMappings = desired.property_mappings.ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var currentPropertyMappings = current.property_mappings.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var desiredPropertyMappings = ToAuthentikReferenceIdSet(desired.property_mappings);
+        var currentPropertyMappings = ToAuthentikReferenceIdSet(current.property_mappings);
         if (!desiredPropertyMappings.SetEquals(currentPropertyMappings))
             return true;
 
-        var desiredRedirectUris = desired.redirect_uris
-            .Select(uri => (uri.matching_mode, uri.url, uri.redirect_uri_type))
+        var desiredRedirectUris = (desired.redirect_uris ?? [])
+            .Select(uri => (
+                NormalizeRequiredText(uri.matching_mode).ToUpperInvariant(),
+                NormalizeRequiredText(uri.url),
+                NormalizeRedirectUriType(uri.redirect_uri_type)))
             .ToHashSet();
-        var currentRedirectUris = current.redirect_uris
-            .Select(uri => (uri.matching_mode, uri.url, uri.redirect_uri_type))
+        var currentRedirectUris = (current.redirect_uris ?? [])
+            .Select(uri => (
+                NormalizeRequiredText(uri.matching_mode).ToUpperInvariant(),
+                NormalizeRequiredText(uri.url),
+                NormalizeRedirectUriType(uri.redirect_uri_type)))
             .ToHashSet();
 
         return !desiredRedirectUris.SetEquals(currentRedirectUris);
@@ -427,10 +434,59 @@ public partial class AuthentikOidcApplicationHandler(
 
     private static bool ShouldUpdate(AuthentikApplicationV3 current, AuthentikApplicationV3 desired)
     {
-        return !desired.name.Equals(current.name)
-               || !desired.slug.Equals(current.slug)
+        return !string.Equals(desired.name, current.name, StringComparison.Ordinal)
+               || !string.Equals(desired.slug, current.slug, StringComparison.Ordinal)
                || !desired.provider.Equals(current.provider)
-               || !string.Equals(desired.launch_url, current.launch_url, StringComparison.Ordinal);
+               || !string.Equals(
+                   NormalizeOptionalText(desired.launch_url),
+                   NormalizeOptionalText(current.launch_url),
+                   StringComparison.Ordinal);
+    }
+
+    private static ISet<string> ToStringSet(IEnumerable<string>? values)
+    {
+        return (values ?? [])
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static ISet<string> ToAuthentikReferenceIdSet(IEnumerable<object>? values)
+    {
+        return (values ?? [])
+            .Select(NormalizeAuthentikReferenceId)
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeAuthentikReferenceId(object? value)
+    {
+        return value switch
+        {
+            null => string.Empty,
+            string text => text,
+            int number => number.ToString(),
+            long number => number.ToString(),
+            JsonElement { ValueKind: JsonValueKind.String } element => element.GetString() ?? string.Empty,
+            JsonElement { ValueKind: JsonValueKind.Number } element => element.GetRawText(),
+            JsonElement { ValueKind: JsonValueKind.Object } element when element.TryGetProperty("pk", out var pk) =>
+                NormalizeAuthentikReferenceId(pk),
+            _ => value.ToString() ?? string.Empty
+        };
+    }
+
+    private static string NormalizeOptionalText(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? string.Empty : value;
+    }
+
+    private static string NormalizeRequiredText(string? value)
+    {
+        return value ?? string.Empty;
+    }
+
+    private static string NormalizeRedirectUriType(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? "AUTHORIZATION" : value.ToUpperInvariant();
     }
 
     private static IdPCommandResult<IdPOidcApplication> Result(
