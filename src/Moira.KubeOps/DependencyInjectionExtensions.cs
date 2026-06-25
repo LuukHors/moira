@@ -1,4 +1,3 @@
-using System.Reflection;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Moira.Common.Models;
@@ -18,29 +17,27 @@ public static class DependencyInjectionExtensions
 {
     public static IServiceCollection AddMoiraKubeOps(this IServiceCollection services)
     {
-        var assembly = Assembly.GetExecutingAssembly();
         services.AddScoped<IAdapterHandler<Group>, AdapterHandler<Group, IdPGroup>>();
         services.AddScoped<IAdapterHandler<OidcApplication>, AdapterHandler<OidcApplication, IdPOidcApplication>>();
         services.AddScoped<IAdapterHandler<Provider>, AdapterHandler<Provider, IdPProvider>>();
+        services.AddScoped<IResultHandler<Group, IdPGroup>, GroupResultHandler>();
+        services.AddScoped<IResultHandler<OidcApplication, IdPOidcApplication>, OidcApplicationResultHandler>();
+        services.AddScoped<IResultHandler<Provider, IdPProvider>, ProviderResultHandler>();
+        services.AddScoped<IPreReconcileSteps<Group>, GroupPreReconcileSteps>();
+        services.AddScoped<IPreReconcileSteps<OidcApplication>, OidcApplicationPreReconcileSteps>();
+        services.AddScoped<IPreReconcileSteps<Provider>, ProviderPreReconcileSteps>();
+        services.AddScoped<IDependencyProvider<Group, IdPGroup>, GroupDependencyProvider>();
+        services.AddScoped<IDependencyProvider<OidcApplication, IdPOidcApplication>, OidcApplicationDependencyProvider>();
+        services.AddScoped<IDependencyProvider<Provider, IdPProvider>, ProviderDependencyProvider>();
         services.AddScoped<ISecretService, SecretService>();
         services.AddScoped<IOidcApplicationSecretService, OidcApplicationSecretService>();
         services.AddScoped<IOidcProviderSettingsService, OidcProviderSettingsService>();
+        services.AddScoped<IOidcProviderSettingsResolver, AuthentikOidcProviderSettingsResolver>();
+        services.AddScoped(typeof(IValidatorExecutor<>), typeof(ValidatorExecutor<>));
         services.AddScoped<AbstractValidator<AuthentikOidcApplicationSettings>, AuthentikOidcApplicationSettingsValidator>();
         services.AddScoped<AbstractValidator<Group>, GroupValidator>();
         services.AddScoped<AbstractValidator<OidcApplication>, OIDCApplicationValidator>();
         services.AddScoped<AbstractValidator<Provider>, ProviderValidator>();
-        return services.Scan(scan => scan
-            .FromAssemblies(assembly)
-            .AddClasses(classes => classes.AssignableTo(typeof(IResultHandler<,>)))
-            .AsImplementedInterfaces()
-            .AddClasses(classes => classes.AssignableTo(typeof(IPreReconcileSteps<>)))
-            .AsImplementedInterfaces()
-            .AddClasses(classes => classes.AssignableTo(typeof(IValidatorExecutor<>)))
-            .AsSelfWithInterfaces()
-            .AddClasses(c => c.AssignableTo(typeof(IDependencyProvider<,>)))
-            .AsSelfWithInterfaces()
-            .AddClasses(c => c.AssignableTo(typeof(IOidcProviderSettingsResolver)))
-            .AsImplementedInterfaces()
-            .WithScopedLifetime());
+        return services;
     }
 }
