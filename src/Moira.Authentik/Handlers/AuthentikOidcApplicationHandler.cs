@@ -235,6 +235,7 @@ public partial class AuthentikOidcApplicationHandler(
             name = application.Spec.DisplayName,
             pk = providerId,
             client_type = application.Spec.UsesClientSecret ? "confidential" : "public",
+            grant_types = ToAuthentikGrantTypes(application),
             client_id = clientId,
             client_secret = application.Spec.UsesClientSecret ? clientSecret : string.Empty,
             authorization_flow = authorizationFlowId,
@@ -291,6 +292,11 @@ public partial class AuthentikOidcApplicationHandler(
         if (!desired.client_type.Equals(current.client_type))
             return true;
 
+        var desiredGrantTypes = desired.grant_types.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var currentGrantTypes = current.grant_types.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (!desiredGrantTypes.SetEquals(currentGrantTypes))
+            return true;
+
         if (shouldRotate)
             return true;
 
@@ -319,20 +325,6 @@ public partial class AuthentikOidcApplicationHandler(
                 IdPExceptionReason.IdpValidationFailed);
         }
 
-        if (!application.Spec.GrantTypes.SequenceEqual(new[] { "authorization_code" }, StringComparer.OrdinalIgnoreCase))
-        {
-            throw new IdPException(
-                "Authentik OIDC application support currently only reconciles the \"authorization_code\" grant type.",
-                IdPExceptionReason.IdpValidationFailed);
-        }
-
-        if (!application.Spec.ResponseTypes.SequenceEqual(new[] { "code" }, StringComparer.OrdinalIgnoreCase))
-        {
-            throw new IdPException(
-                "Authentik OIDC application support currently only reconciles the \"code\" response type.",
-                IdPExceptionReason.IdpValidationFailed);
-        }
-
         if (!string.IsNullOrWhiteSpace(application.Spec.ClientUri) ||
             !string.IsNullOrWhiteSpace(application.Spec.LogoUri) ||
             !string.IsNullOrWhiteSpace(application.Spec.PolicyUri) ||
@@ -343,6 +335,44 @@ public partial class AuthentikOidcApplicationHandler(
                 "Authentik OIDC application support currently does not reconcile OIDC client metadata fields such as clientUri, logoUri, policyUri, termsOfServiceUri or contacts.",
                 IdPExceptionReason.IdpValidationFailed);
         }
+    }
+
+    private static IEnumerable<string> ToAuthentikGrantTypes(IdPOidcApplication application)
+    {
+        var grantTypes = application.Spec.GrantTypes.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var responseType in application.Spec.ResponseTypes.Select(NormalizeResponseType))
+        {
+            switch (responseType)
+            {
+                case "code":
+                    grantTypes.Add("authorization_code");
+                    break;
+                case "id_token":
+                case "id_token token":
+                    grantTypes.Add("implicit");
+                    break;
+                case "code token":
+                case "code id_token":
+                case "code id_token token":
+                    grantTypes.Add("hybrid");
+                    break;
+            }
+        }
+
+        return grantTypes.Order(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeResponseType(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        return string.Join(
+            ' ',
+            value.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
     }
 
     private static bool ShouldUpdate(AuthentikApplicationV3 current, AuthentikApplicationV3 desired)
