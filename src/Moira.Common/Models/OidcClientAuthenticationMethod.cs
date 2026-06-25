@@ -1,8 +1,9 @@
 namespace Moira.Common.Models;
 
-public static class OidcClientAuthenticationMethod
+public enum OidcClientAuthenticationMethod
 {
-    public const string ClientSecretBasic = "client_secret_basic";
-    public const string ClientSecretPost = "client_secret_post";
-    public const string None = "none";
+    Unknown = 0,
+    ClientSecretBasic,
+    ClientSecretPost,
+    None
 }

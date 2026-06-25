@@ -333,7 +333,7 @@ public partial class AuthentikOidcApplicationHandler(
                 IdPExceptionReason.IdpValidationFailed);
         }
 
-        if (application.Spec.ClientAuthenticationMethod.Equals(OidcClientAuthenticationMethod.ClientSecretPost, StringComparison.OrdinalIgnoreCase))
+        if (application.Spec.ClientAuthenticationMethod == OidcClientAuthenticationMethod.ClientSecretPost)
         {
             throw new IdPException(
                 "Authentik OIDC application support currently does not reconcile the \"client_secret_post\" client authentication method.",

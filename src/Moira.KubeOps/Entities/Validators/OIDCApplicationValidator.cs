@@ -11,13 +11,6 @@ internal class OIDCApplicationValidator : AbstractValidator<OidcApplication>
         OidcApplicationType.Native
     };
 
-    private static readonly ISet<string> ClientAuthenticationMethods = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-    {
-        OidcClientAuthenticationMethod.ClientSecretBasic,
-        OidcClientAuthenticationMethod.ClientSecretPost,
-        OidcClientAuthenticationMethod.None
-    };
-
     private static readonly ISet<string> GrantTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         "authorization_code",
@@ -81,8 +74,8 @@ internal class OIDCApplicationValidator : AbstractValidator<OidcApplication>
             .Must(t => ApplicationTypes.Contains(t))
             .WithMessage("The \"oidc.applicationType\" property should be either \"web\" or \"native\"");
         RuleFor(a => a.Spec.Oidc.ClientAuthenticationMethod)
-            .Must(t => ClientAuthenticationMethods.Contains(t))
-            .WithMessage("The \"oidc.clientAuthenticationMethod\" property should be \"client_secret_basic\", \"client_secret_post\" or \"none\"");
+            .Must(t => t != OidcClientAuthenticationMethod.Unknown && Enum.IsDefined(t))
+            .WithMessage("The \"oidc.clientAuthenticationMethod\" property should be \"ClientSecretBasic\", \"ClientSecretPost\" or \"None\"");
         RuleFor(a => a.Spec.Oidc.Scopes)
             .Must(scopes => HasValue(scopes, "openid"))
             .WithMessage("The \"oidc.scopes\" property should include \"openid\"");

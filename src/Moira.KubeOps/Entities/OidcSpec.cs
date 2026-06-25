@@ -1,3 +1,5 @@
+using Moira.Common.Models;
+
 namespace Moira.KubeOps.Entities;
 
 public class OidcSpec
@@ -9,7 +11,7 @@ public class OidcSpec
     public IEnumerable<string> Scopes { get; set; } = ["openid"];
     public IEnumerable<string> GrantTypes { get; set; } = ["authorization_code"];
     public IEnumerable<string> ResponseTypes { get; set; } = ["code"];
-    public string ClientAuthenticationMethod { get; set; } = "client_secret_basic";
+    public OidcClientAuthenticationMethod ClientAuthenticationMethod { get; set; } = OidcClientAuthenticationMethod.ClientSecretBasic;
     public string ClientUri { get; set; } = string.Empty;
     public string LogoUri { get; set; } = string.Empty;
     public string PolicyUri { get; set; } = string.Empty;

@@ -65,7 +65,7 @@ spec:
     name: authentik-provider
   oidc:
     applicationType: native
-    clientAuthenticationMethod: none
+    clientAuthenticationMethod: None
     redirectUris:
       - http://127.0.0.1:8080/callback
   secrets:

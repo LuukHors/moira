@@ -9,7 +9,7 @@ public record IdPOidcApplicationSpec(
     IEnumerable<string> Scopes,
     IEnumerable<string> GrantTypes,
     IEnumerable<string> ResponseTypes,
-    string ClientAuthenticationMethod,
+    OidcClientAuthenticationMethod ClientAuthenticationMethod,
     string ClientUri,
     string LogoUri,
     string PolicyUri,
