@@ -12,6 +12,7 @@ namespace Moira.Authentik.Handlers;
 public partial class AuthentikOidcApplicationHandler(
     IHttpService<AuthentikApplicationV3, AuthentikApplicationV3, string> applicationHttpClient,
     IHttpService<AuthentikOAuth2ProviderV3, AuthentikOAuth2ProviderV3, int> providerHttpClient,
+    IHttpService<AuthentikScopeMappingV3, AuthentikScopeMappingV3, string> scopeMappingHttpClient,
     IHttpService<AuthentikFlowV3, AuthentikFlowV3, string> flowHttpClient,
     ILogger<AuthentikOidcApplicationHandler> logger) : IAuthentikOidcApplicationHandler
 {
@@ -221,14 +222,17 @@ public partial class AuthentikOidcApplicationHandler(
             "redirectUriMatchingMode",
             DefaultRedirectUriMatchingMode) ?? DefaultRedirectUriMatchingMode;
 
-        var authorizationFlowId = await GetFlowIdAsync(
+        var authorizationFlowTask = GetFlowIdAsync(
             application.IdPProvider,
             authorizationFlowSlug,
             cancellationToken);
-        var invalidationFlowId = await GetFlowIdAsync(
+        var invalidationFlowTask = GetFlowIdAsync(
             application.IdPProvider,
             invalidationFlowSlug,
             cancellationToken);
+        var scopeMappingIdsTask = ResolveScopeMappingIdsAsync(application, cancellationToken);
+
+        await Task.WhenAll(authorizationFlowTask, invalidationFlowTask, scopeMappingIdsTask);
 
         return new AuthentikOAuth2ProviderV3
         {
@@ -238,9 +242,10 @@ public partial class AuthentikOidcApplicationHandler(
             grant_types = ToAuthentikGrantTypes(application),
             client_id = clientId,
             client_secret = application.Spec.UsesClientSecret ? clientSecret : string.Empty,
-            authorization_flow = authorizationFlowId,
-            invalidation_flow = invalidationFlowId,
+            authorization_flow = authorizationFlowTask.Result,
+            invalidation_flow = invalidationFlowTask.Result,
             attributes = DefaultAttributes,
+            property_mappings = scopeMappingIdsTask.Result,
             redirect_uris = application.Spec.RedirectUris
                 .Select(uri => new AuthentikRedirectUriV3(redirectUriMatchingMode, uri))
                 .Concat(application.Spec.PostLogoutRedirectUris.Select(
@@ -306,6 +311,11 @@ public partial class AuthentikOidcApplicationHandler(
         if (!string.Equals(desired.invalidation_flow, current.invalidation_flow, StringComparison.Ordinal))
             return true;
 
+        var desiredPropertyMappings = desired.property_mappings.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var currentPropertyMappings = current.property_mappings.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (!desiredPropertyMappings.SetEquals(currentPropertyMappings))
+            return true;
+
         var desiredRedirectUris = desired.redirect_uris
             .Select(uri => (uri.matching_mode, uri.url, uri.redirect_uri_type))
             .ToHashSet();
@@ -318,13 +328,6 @@ public partial class AuthentikOidcApplicationHandler(
 
     private static void ValidateSupportedCoreProperties(IdPOidcApplication application)
     {
-        if (!application.Spec.Scopes.SequenceEqual(new[] { "openid" }, StringComparer.OrdinalIgnoreCase))
-        {
-            throw new IdPException(
-                "Authentik OIDC application support currently only reconciles the default \"openid\" scope.",
-                IdPExceptionReason.IdpValidationFailed);
-        }
-
         if (!string.IsNullOrWhiteSpace(application.Spec.ClientUri) ||
             !string.IsNullOrWhiteSpace(application.Spec.LogoUri) ||
             !string.IsNullOrWhiteSpace(application.Spec.PolicyUri) ||
@@ -361,6 +364,53 @@ public partial class AuthentikOidcApplicationHandler(
         }
 
         return grantTypes.Order(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private async Task<IEnumerable<string>> ResolveScopeMappingIdsAsync(
+        IdPOidcApplication application,
+        CancellationToken cancellationToken)
+    {
+        var scopeNames = application.Spec.Scopes
+            .Where(scope => !string.IsNullOrWhiteSpace(scope))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        var scopeMappingTasks = scopeNames.Select(scope => ResolveScopeMappingIdAsync(
+            application,
+            scope,
+            cancellationToken));
+
+        var scopeMappingIds = await Task.WhenAll(scopeMappingTasks);
+        return scopeMappingIds.Order(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private async Task<string> ResolveScopeMappingIdAsync(
+        IdPOidcApplication application,
+        string scope,
+        CancellationToken cancellationToken)
+    {
+        var page = await scopeMappingHttpClient.ListByQueryAsync(
+            new Dictionary<string, string> { ["scope_name"] = scope },
+            application.IdPProvider,
+            cancellationToken: cancellationToken);
+        var matches = page.Results
+            .Where(mapping => mapping.scope_name.Equals(scope, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+
+        if (matches.Length == 0)
+        {
+            throw new IdPException(
+                $"Authentik scope mapping for scope \"{scope}\" was not found.",
+                IdPExceptionReason.IdpValidationFailed);
+        }
+
+        if (matches.Length > 1)
+        {
+            throw new IdPException(
+                $"Found multiple Authentik scope mappings for scope \"{scope}\". Use unique scope names before reconciling this OIDC application.",
+                IdPExceptionReason.IdpValidationFailed);
+        }
+
+        return matches[0].pk;
     }
 
     private static string NormalizeResponseType(string? value)

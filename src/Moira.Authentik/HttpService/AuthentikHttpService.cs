@@ -35,6 +35,24 @@ public class AuthentikHttpService<TModel, TModelWrite, TId>(
         catch (FlurlHttpException e) { throw await WrapAsync(e, "GET", request.Url); }
     }
 
+    public async Task<AuthentikPageResult<TModel>> ListByQueryAsync(IReadOnlyDictionary<string, string> query, IdPProvider provider, TId? id = default, CancellationToken cancellationToken = default)
+    {
+        var request = await BuildUrl(provider, id, cancellationToken);
+
+        try
+        {
+            foreach (var (key, value) in query)
+            {
+                request.AppendQueryParam(key, value);
+            }
+
+            return await request
+                .GetAsync(cancellationToken: cancellationToken)
+                .ReceiveJson<AuthentikPageResult<TModel>>();
+        }
+        catch (FlurlHttpException e) { throw await WrapAsync(e, "GET", request.Url); }
+    }
+
     public async Task<TModel?> GetByNameAsync(string name, IdPProvider provider, IReadOnlyDictionary<string, object>? attributes, CancellationToken cancellationToken)
     {
         var page = await ListAsync(name, attributes, provider, default, cancellationToken);
