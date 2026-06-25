@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net;
 using Flurl;
 using Flurl.Http;
@@ -10,18 +11,58 @@ namespace Moira.Authentik.Authentication;
 public class AuthentikAuthenticationService(
     ILogger<AuthentikAuthenticationService> logger) : IAuthentikAuthenticationService
 {
-    private readonly Dictionary<string, AuthentikToken> _tokens = new();
+    private readonly ConcurrentDictionary<string, SemaphoreSlim> _tokenLocks = new();
+    private readonly ConcurrentDictionary<string, AuthentikToken> _tokens = new();
     
     public async Task<string> AcquireTokenAsync(IdPProvider provider, CancellationToken cancellationToken)
     {
-        var tokenCached = _tokens.TryGetValue(provider.Name, out var token);
-
-        if (tokenCached && token is not null && token.ExpiresAt > DateTime.UtcNow.AddMinutes(-1))
+        if (TryGetValidToken(provider.Name, out var cachedToken))
         {
-            logger.LogDebug("Using cached Authentik token for provider {ProviderName}; token expires at {TokenExpiresAt}", provider.Name, token.ExpiresAt);
-            return token.Token;
+            return cachedToken;
         }
 
+        var tokenLock = _tokenLocks.GetOrAdd(provider.Name, _ => new SemaphoreSlim(1, 1));
+        await tokenLock.WaitAsync(cancellationToken);
+        try
+        {
+            if (TryGetValidToken(provider.Name, out cachedToken))
+            {
+                return cachedToken;
+            }
+
+            return await RequestTokenAsync(provider, cancellationToken);
+        }
+        finally
+        {
+            tokenLock.Release();
+        }
+    }
+
+    public bool InvalidateCachedToken(string providerName)
+    {
+        return _tokens.TryRemove(providerName, out _);
+    }
+
+    private bool TryGetValidToken(string providerName, out string tokenValue)
+    {
+        tokenValue = string.Empty;
+
+        if (!_tokens.TryGetValue(providerName, out var token) ||
+            token.ExpiresAt <= DateTime.UtcNow.AddMinutes(-1))
+        {
+            return false;
+        }
+
+        logger.LogDebug(
+            "Using cached Authentik token for provider {ProviderName}; token expires at {TokenExpiresAt}",
+            providerName,
+            token.ExpiresAt);
+        tokenValue = token.Token;
+        return true;
+    }
+
+    private async Task<string> RequestTokenAsync(IdPProvider provider, CancellationToken cancellationToken)
+    {
         logger.LogDebug("Requesting new Authentik token for provider {ProviderName}", provider.Name);
 
         var endpoint = string.Empty;
@@ -75,11 +116,6 @@ public class AuthentikAuthenticationService(
 
             throw new IdPHttpException(message, null, "POST", endpoint, ex.StatusCode, ex);
         }
-    }
-
-    public bool InvalidateCachedToken(string providerName)
-    {
-        return _tokens.Remove(providerName);
     }
 
     private static bool IsCredentialFailure(int? statusCode, string message)
