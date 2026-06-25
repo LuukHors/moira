@@ -246,10 +246,9 @@ public partial class AuthentikOidcApplicationHandler(
             invalidation_flow = invalidationFlowTask.Result,
             attributes = DefaultAttributes,
             property_mappings = scopeMappingIdsTask.Result.Cast<object>().ToArray(),
+            logout_uri = application.Spec.LogoutUri,
             redirect_uris = application.Spec.RedirectUris
                 .Select(uri => new AuthentikRedirectUriV3(redirectUriMatchingMode, uri))
-                .Concat(application.Spec.PostLogoutRedirectUris.Select(
-                    uri => new AuthentikRedirectUriV3(redirectUriMatchingMode, uri, "post_logout")))
         };
     }
 
@@ -304,6 +303,12 @@ public partial class AuthentikOidcApplicationHandler(
             return true;
 
         if (!string.Equals(desired.invalidation_flow, current.invalidation_flow, StringComparison.Ordinal))
+            return true;
+
+        if (!string.Equals(
+                NormalizeOptionalText(desired.logout_uri),
+                NormalizeOptionalText(current.logout_uri),
+                StringComparison.Ordinal))
             return true;
 
         var desiredPropertyMappings = ToAuthentikReferenceIdSet(desired.property_mappings);

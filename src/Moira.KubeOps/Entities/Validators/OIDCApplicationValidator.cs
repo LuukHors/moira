@@ -88,9 +88,9 @@ internal class OIDCApplicationValidator : AbstractValidator<OidcApplication>
         RuleForEach(a => a.Spec.Oidc.RedirectUris)
             .Must(IsAbsoluteUri)
             .WithMessage("The \"oidc.redirectUris\" property should contain absolute URIs");
-        RuleForEach(a => a.Spec.Oidc.PostLogoutRedirectUris)
-            .Must(IsAbsoluteUri)
-            .WithMessage("The \"oidc.postLogoutRedirectUris\" property should contain absolute URIs");
+        RuleFor(a => a.Spec.Oidc.LogoutUri)
+            .Must(BeEmptyOrAbsoluteUri)
+            .WithMessage("The \"oidc.logoutUri\" property should be an absolute URI");
         RuleFor(a => a.Spec.Oidc.LaunchUrl)
             .Must(BeEmptyOrAbsoluteUri)
             .WithMessage("The \"oidc.launchUrl\" property should be an absolute URI");

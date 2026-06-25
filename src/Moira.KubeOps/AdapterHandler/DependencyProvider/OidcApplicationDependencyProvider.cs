@@ -69,7 +69,7 @@ public class OidcApplicationDependencyProvider(
                 entity.Spec.DisplayName,
                 entity.Spec.Oidc.ApplicationType,
                 entity.Spec.Oidc.RedirectUris,
-                entity.Spec.Oidc.PostLogoutRedirectUris,
+                entity.Spec.Oidc.LogoutUri,
                 entity.Spec.Oidc.LaunchUrl,
                 entity.Spec.Oidc.Scopes,
                 entity.Spec.Oidc.GrantTypes,

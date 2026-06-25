@@ -11,8 +11,7 @@ spec:
   oidc:
     redirectUris:
       - https://argocd.example.com/auth/callback
-    postLogoutRedirectUris:
-      - https://argocd.example.com/
+    logoutUri: https://argocd.example.com/
     launchUrl: https://argocd.example.com/
   secrets:
     - name: dev-argocd-application-oidc

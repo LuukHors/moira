@@ -12,4 +12,5 @@ public record AuthentikOAuth2ProviderV3
     public IReadOnlyDictionary<string, object> attributes { get; set; } = new Dictionary<string, object>();
     public IEnumerable<object> property_mappings { get; set; } = [];
     public IEnumerable<AuthentikRedirectUriV3> redirect_uris { get; set; } = [];
+    public string logout_uri { get; set; } = string.Empty;
 }
