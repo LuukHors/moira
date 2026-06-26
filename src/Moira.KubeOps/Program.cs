@@ -1,7 +1,7 @@
 ﻿using KubeOps.Operator;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Moira.Authentik;
+using Moira.Authentik.Controllers;
 using Moira.Common;
 using Moira.KubeOps;
 using Serilog;

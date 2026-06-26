@@ -23,7 +23,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Moira.Authentik\Moira.Authentik.csproj" />
+      <ProjectReference Include="..\Authentik\Moira.Authentik.Controllers\Moira.Authentik.Controllers.csproj" />
       <ProjectReference Include="..\Moira.Common\Moira.Common.csproj" />
     </ItemGroup>
 </Project>
