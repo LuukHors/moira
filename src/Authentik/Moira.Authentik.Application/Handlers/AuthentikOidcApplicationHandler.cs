@@ -399,8 +399,8 @@ public partial class AuthentikOidcApplicationHandler(
                || !string.Equals(desired.slug, current.slug, StringComparison.Ordinal)
                || !desired.provider.Equals(current.provider)
                || !string.Equals(
-                   NormalizeLaunchUrl(desired.launch_url),
-                   NormalizeLaunchUrl(current.launch_url),
+                   NormalizeLaunchUrl(desired.meta_launch_url),
+                   NormalizeLaunchUrl(current.meta_launch_url),
                    StringComparison.Ordinal);
     }
 

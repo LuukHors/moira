@@ -5,4 +5,4 @@ public record AuthentikApplicationV3(
     string slug,
     string? pk,
     int? provider,
-    string? launch_url);
+    string? meta_launch_url);
