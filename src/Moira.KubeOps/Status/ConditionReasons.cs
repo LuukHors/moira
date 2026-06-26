@@ -10,6 +10,7 @@ public static class ConditionReasons
     public const string SecretKeyMissing = "SecretKeyMissing";
     public const string ProviderMissing = "ProviderMissing";
     public const string ProviderAdapterMissing = "ProviderAdapterMissing";
+    public const string ValidationFailed = "ValidationFailed";
     public const string IdpRequestFailed = "IdpRequestFailed";
     public const string IdpValidationFailed = "IdpValidationFailed";
     public const string DeleteStarted = "DeleteStarted";

@@ -9,6 +9,7 @@ public static class MoiraExceptionConditionReasonMapper
     {
         return exception.Reason switch
         {
+            MoiraExceptionReason.ValidationFailed => ConditionReasons.ValidationFailed,
             MoiraExceptionReason.IdpRequestFailed => ConditionReasons.IdpRequestFailed,
             MoiraExceptionReason.IdpValidationFailed => ConditionReasons.IdpValidationFailed,
             _ => ConditionReasons.ReconcileFailed
