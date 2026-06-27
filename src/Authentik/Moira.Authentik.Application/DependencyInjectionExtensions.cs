@@ -17,6 +17,8 @@ public static class DependencyInjectionExtensions
         services.AddScoped<IUpdateChecker<AuthentikOAuth2ProviderV3, AuthentikOAuth2ProviderV3>, AuthentikOAuth2ProviderUpdateChecker>();
         services.AddScoped<IUpdateChecker<AuthentikApplicationV3, AuthentikApplicationV3>, AuthentikApplicationUpdateChecker>();
 
+        services.AddScoped<IAuthentikFlowBuilder, AuthentikFlowBuilder>();
+        services.AddScoped<IAuthentikScopeMappingBuilder, AuthentikScopeMappingBuilder>();
         services.AddScoped<IAuthentikOAuth2ProviderBuilder, AuthentikOAuth2ProviderBuilder>();
         services.AddScoped<IAuthentikApplicationBuilder, AuthentikApplicationBuilder>();
         services.AddScoped<IAuthentikGroupBuilder, AuthentikGroupBuilder>();

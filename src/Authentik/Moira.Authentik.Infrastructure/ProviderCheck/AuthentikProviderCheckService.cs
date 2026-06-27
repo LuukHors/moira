@@ -1,4 +1,3 @@
-using System.Net;
 using Flurl;
 using Flurl.Http;
 using Microsoft.Extensions.Logging;
@@ -64,12 +63,9 @@ public class AuthentikProviderCheckService(
                 request.Url,
                 TimeoutSeconds,
                 provider.Name);
-            throw new IdPHttpException(
+            throw new IdPException(
                 $"Request was not able to be completed within {TimeoutSeconds} seconds",
-                HttpStatusCode.RequestTimeout,
-                "GET",
-                request.Url,
-                (int)HttpStatusCode.RequestTimeout,
+                IdPExceptionReason.IdpRequestFailed,
                 ex);
         }
         catch (FlurlHttpException ex)
@@ -110,12 +106,9 @@ public class AuthentikProviderCheckService(
                 request.Url,
                 TimeoutSeconds,
                 provider.Name);
-            throw new IdPHttpException(
+            throw new IdPException(
                 $"Request was not able to be completed within {TimeoutSeconds} seconds",
-                HttpStatusCode.RequestTimeout,
-                "GET",
-                request.Url,
-                (int)HttpStatusCode.RequestTimeout,
+                IdPExceptionReason.IdpRequestFailed,
                 ex);
         }
         catch (FlurlHttpException ex) when (IsAuthorizationFailure(ex.StatusCode))
@@ -146,10 +139,10 @@ public class AuthentikProviderCheckService(
         }
     }
 
-    private static async Task<IdPHttpException> WrapRequestExceptionAsync(FlurlHttpException ex, string method, string url)
+    private static async Task<IdPException> WrapRequestExceptionAsync(FlurlHttpException ex, string method, string url)
     {
         var message = await ex.GetResponseStringAsync();
-        return new IdPHttpException(message, null, method, url, ex.StatusCode, ex);
+        return new IdPException(message, IdPExceptionReason.IdpRequestFailed, ex);
     }
 
     private static bool IsAuthorizationFailure(int? statusCode)
