@@ -1,6 +1,6 @@
 using Moira.Common.Models;
 
-namespace Moira.Authentik.Application.Ports;
+namespace Moira.Authentik.Infrastructure.Authentication;
 
 public interface IAuthentikAuthenticationService
 {

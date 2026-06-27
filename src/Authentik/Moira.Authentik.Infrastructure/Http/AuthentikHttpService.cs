@@ -3,6 +3,7 @@ using System.Text.Json;
 using Flurl.Http;
 using Moira.Authentik.Application.Ports;
 using Moira.Authentik.Domain;
+using Moira.Authentik.Infrastructure.Authentication;
 using Moira.Authentik.Infrastructure.Http.Routes;
 using Moira.Common.Exceptions;
 using Moira.Common.Models;
@@ -12,7 +13,7 @@ namespace Moira.Authentik.Infrastructure.Http;
 internal class AuthentikHttpService<TModel, TModelWrite, TId>(
     IAuthentikAuthenticationService authService,
     IAuthentikRoute<TModel, TModelWrite, TId> route
-) : IHttpService<TModel, TModelWrite, TId>
+) : IAuthentikRepository<TModel, TModelWrite, TId>
 {
     private const string AuthentikApiBasePath = "api/v3";
 

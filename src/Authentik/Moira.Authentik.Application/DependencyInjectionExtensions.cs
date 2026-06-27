@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Moira.Authentik.Application.Builders;
 using Moira.Authentik.Application.Handlers;
 using Moira.Authentik.Application.UpdateCheckers;
 using Moira.Authentik.Domain.Applications;
@@ -15,6 +16,10 @@ public static class DependencyInjectionExtensions
         services.AddScoped<IUpdateChecker<AuthentikGroupV3, AuthentikGroupV3>, AuthentikGroupUpdateChecker>();
         services.AddScoped<IUpdateChecker<AuthentikOAuth2ProviderV3, AuthentikOAuth2ProviderV3>, AuthentikOAuth2ProviderUpdateChecker>();
         services.AddScoped<IUpdateChecker<AuthentikApplicationV3, AuthentikApplicationV3>, AuthentikApplicationUpdateChecker>();
+
+        services.AddScoped<IAuthentikOAuth2ProviderBuilder, AuthentikOAuth2ProviderBuilder>();
+        services.AddScoped<IAuthentikApplicationBuilder, AuthentikApplicationBuilder>();
+        services.AddScoped<IAuthentikGroupBuilder, AuthentikGroupBuilder>();
 
         services.AddScoped<IAuthentikHandler<IdPGroup, AuthentikGroupV3>, AuthentikGroupHandler>();
         services.AddScoped<IAuthentikOidcApplicationHandler, AuthentikOidcApplicationHandler>();

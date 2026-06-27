@@ -1,27 +1,23 @@
 using System.Security.Cryptography;
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using Moira.Authentik.Application.Builders;
 using Moira.Authentik.Application.Ports;
 using Moira.Authentik.Domain.Applications;
 using Moira.Common.Commands;
-using Moira.Common.Exceptions;
 using Moira.Common.Models;
 using Moira.Common.Provider;
 
 namespace Moira.Authentik.Application.Handlers;
 
 public partial class AuthentikOidcApplicationHandler(
-    IHttpService<AuthentikApplicationV3, AuthentikApplicationV3, string> applicationHttpClient,
-    IHttpService<AuthentikOAuth2ProviderV3, AuthentikOAuth2ProviderV3, int> providerHttpClient,
-    IHttpService<AuthentikScopeMappingV3, AuthentikScopeMappingV3, string> scopeMappingHttpClient,
-    IHttpService<AuthentikFlowV3, AuthentikFlowV3, string> flowHttpClient,
+    IAuthentikRepository<AuthentikApplicationV3, AuthentikApplicationV3, string> applicationRepository,
+    IAuthentikRepository<AuthentikOAuth2ProviderV3, AuthentikOAuth2ProviderV3, int> providerRepository,
+    IAuthentikOAuth2ProviderBuilder providerBuilder,
+    IAuthentikApplicationBuilder applicationBuilder,
     IUpdateChecker<AuthentikOAuth2ProviderV3, AuthentikOAuth2ProviderV3> providerUpdateChecker,
     IUpdateChecker<AuthentikApplicationV3, AuthentikApplicationV3> applicationUpdateChecker,
     ILogger<AuthentikOidcApplicationHandler> logger) : IAuthentikOidcApplicationHandler
 {
-    private const string DefaultAuthorizationFlowSlug = "default-provider-authorization-explicit-consent";
-    private const string DefaultInvalidationFlowSlug = "default-provider-invalidation-flow";
-    private const string DefaultRedirectUriMatchingMode = "strict";
     private static readonly IReadOnlyDictionary<string, object> DefaultAttributes = new Dictionary<string, object> { ["managed-by"] = "moira" };
 
     public async Task<AuthentikOidcApplicationV3?> GetAsync(IdPCommand<IdPOidcApplication> command, CancellationToken cancellationToken)
@@ -38,7 +34,7 @@ public partial class AuthentikOidcApplicationHandler(
             return new AuthentikOidcApplicationV3(application, null);
         }
 
-        var provider = await providerHttpClient.GetByIdAsync(
+        var provider = await providerRepository.GetByIdAsync(
             application.provider.Value,
             command.Entity.IdPProvider,
             DefaultAttributes,
@@ -52,8 +48,8 @@ public partial class AuthentikOidcApplicationHandler(
         var now = DateTime.UtcNow;
         var provider = await CreateProviderAsync(command, cancellationToken);
 
-        var application = await applicationHttpClient.CreateAsync(
-            BuildApplication(command.Entity, provider!.pk, null),
+        var application = await applicationRepository.CreateAsync(
+            applicationBuilder.Build(command.Entity, provider.pk, null),
             command.Entity.IdPProvider,
             cancellationToken);
 
@@ -69,12 +65,10 @@ public partial class AuthentikOidcApplicationHandler(
         var clientId = GenerateToken(24);
         var clientSecret = command.Entity.Spec.UsesClientSecret ? GenerateToken(48) : string.Empty;
 
-        var provider = await providerHttpClient.CreateAsync(
-            await BuildProviderAsync(command.Entity, clientId, clientSecret, null, cancellationToken),
+        return await providerRepository.CreateAsync(
+            await providerBuilder.BuildAsync(command.Entity, clientId, clientSecret, null, cancellationToken),
             command.Entity.IdPProvider,
             cancellationToken);
-
-        return provider;
     }
 
     public async Task<IdPCommandResult<IdPOidcApplication>> UpdateAsync(
@@ -93,7 +87,7 @@ public partial class AuthentikOidcApplicationHandler(
             ? shouldRotate ? GenerateToken(48) : command.Entity.ClientSecret
             : string.Empty;
 
-        var desiredProvider = await BuildProviderAsync(
+        var desiredProvider = await providerBuilder.BuildAsync(
             command.Entity,
             clientId,
             clientSecret,
@@ -106,7 +100,7 @@ public partial class AuthentikOidcApplicationHandler(
             command,
             cancellationToken);
 
-        var desiredApplication = BuildApplication(command.Entity, updatedProvider.pk ?? current.Application.provider, current.Application.pk);
+        var desiredApplication = applicationBuilder.Build(command.Entity, updatedProvider.pk ?? current.Application.provider, current.Application.pk);
         var updatedApplication = await ReconcileApplicationAsync(
             current.Application,
             desiredApplication,
@@ -131,13 +125,13 @@ public partial class AuthentikOidcApplicationHandler(
             return false;
         }
 
-        var deletedApplication = await applicationHttpClient.DeleteAsync(
+        var deletedApplication = await applicationRepository.DeleteAsync(
             oidcApplication.Application.slug,
             command.Entity.IdPProvider,
             cancellationToken);
 
         var deletedProvider = oidcApplication.Provider is null ||
-                              await providerHttpClient.DeleteAsync(
+                              await providerRepository.DeleteAsync(
                                   oidcApplication.Provider.pk!.Value,
                                   command.Entity.IdPProvider,
                                   cancellationToken);
@@ -158,7 +152,7 @@ public partial class AuthentikOidcApplicationHandler(
         if (!string.IsNullOrEmpty(command.Entity.Status.ApplicationId))
         {
             logger.LogDebug("Looking up Authentik application by application id {ApplicationId}", command.Entity.Status.ApplicationId);
-            return await applicationHttpClient.GetByIdAsync(
+            return await applicationRepository.GetByIdAsync(
                 command.Entity.Status.ApplicationId,
                 command.Entity.IdPProvider,
                 null,
@@ -166,7 +160,7 @@ public partial class AuthentikOidcApplicationHandler(
         }
 
         logger.LogDebug("Looking up Authentik application by display name {DisplayName}", command.Entity.Spec.DisplayName);
-        return await applicationHttpClient.GetByNameAsync(
+        return await applicationRepository.GetByNameAsync(
             command.Entity.Spec.DisplayName,
             command.Entity.IdPProvider,
             null,
@@ -187,7 +181,7 @@ public partial class AuthentikOidcApplicationHandler(
         }
 
         logger.LogInformation("OIDC provider {ProviderName} is not up to date, updating provider id {ProviderId}", desired.name, current.pk);
-        return await providerHttpClient.UpdateAsync(current.pk!.Value, desired, command.Entity.IdPProvider, cancellationToken);
+        return await providerRepository.UpdateAsync(current.pk!.Value, desired, command.Entity.IdPProvider, cancellationToken);
     }
 
     private async Task<AuthentikApplicationV3> ReconcileApplicationAsync(
@@ -203,157 +197,7 @@ public partial class AuthentikOidcApplicationHandler(
         }
 
         logger.LogInformation("OIDC application {DisplayName} is not up to date, updating application id {ApplicationId}", desired.name, current.slug);
-        return await applicationHttpClient.UpdateAsync(current.slug, desired, command.Entity.IdPProvider, cancellationToken);
-    }
-
-    private async Task<AuthentikOAuth2ProviderV3> BuildProviderAsync(
-        IdPOidcApplication application,
-        string clientId,
-        string clientSecret,
-        int? providerId,
-        CancellationToken cancellationToken)
-    {
-        ValidateSupportedCoreProperties(application);
-
-        var authorizationFlowSlug = application.Spec.ProviderSettings?.GetValueOrDefault(
-            "authorizationFlowSlug",
-            DefaultAuthorizationFlowSlug) ?? DefaultAuthorizationFlowSlug;
-        var invalidationFlowSlug = application.Spec.ProviderSettings?.GetValueOrDefault(
-            "invalidationFlowSlug",
-            DefaultInvalidationFlowSlug) ?? DefaultInvalidationFlowSlug;
-        var redirectUriMatchingMode = application.Spec.ProviderSettings?.GetValueOrDefault(
-            "redirectUriMatchingMode",
-            DefaultRedirectUriMatchingMode) ?? DefaultRedirectUriMatchingMode;
-
-        var authorizationFlowTask = GetFlowIdAsync(
-            application.IdPProvider,
-            authorizationFlowSlug,
-            cancellationToken);
-        var invalidationFlowTask = GetFlowIdAsync(
-            application.IdPProvider,
-            invalidationFlowSlug,
-            cancellationToken);
-        var scopeMappingIdsTask = ResolveScopeMappingIdsAsync(application, cancellationToken);
-
-        await Task.WhenAll(authorizationFlowTask, invalidationFlowTask, scopeMappingIdsTask);
-
-        return new AuthentikOAuth2ProviderV3
-        {
-            name = application.Spec.DisplayName,
-            pk = providerId,
-            client_type = application.Spec.UsesClientSecret ? "confidential" : "public",
-            client_id = clientId,
-            client_secret = application.Spec.UsesClientSecret ? clientSecret : string.Empty,
-            authorization_flow = authorizationFlowTask.Result,
-            invalidation_flow = invalidationFlowTask.Result,
-            attributes = DefaultAttributes,
-            property_mappings = scopeMappingIdsTask.Result.Cast<object>().ToArray(),
-            logout_uri = application.Spec.LogoutUri,
-            redirect_uris = application.Spec.RedirectUris
-                .Select(uri => new AuthentikRedirectUriV3(redirectUriMatchingMode, uri))
-        };
-    }
-
-    private async Task<string> GetFlowIdAsync(
-        IdPProvider provider,
-        string flowSlug,
-        CancellationToken cancellationToken)
-    {
-        var flow = await flowHttpClient.GetByIdAsync(flowSlug, provider, null, cancellationToken);
-
-        if (flow is null || string.IsNullOrWhiteSpace(flow.pk))
-        {
-            throw new IdPException(
-                $"Authentik flow \"{flowSlug}\" was not found.",
-                IdPExceptionReason.IdpValidationFailed);
-        }
-
-        return flow.pk;
-    }
-
-    private static AuthentikApplicationV3 BuildApplication(
-        IdPOidcApplication application,
-        int? providerId,
-        string? applicationPk)
-    {
-        return new AuthentikApplicationV3(
-            application.Spec.DisplayName,
-            Slug(application.Name),
-            applicationPk,
-            providerId,
-            NormalizeLaunchUrl(application.Spec.LaunchUrl));
-    }
-
-    private static void ValidateSupportedCoreProperties(IdPOidcApplication application)
-    {
-        if (!string.IsNullOrWhiteSpace(application.Spec.ClientUri) ||
-            !string.IsNullOrWhiteSpace(application.Spec.LogoUri) ||
-            !string.IsNullOrWhiteSpace(application.Spec.PolicyUri) ||
-            !string.IsNullOrWhiteSpace(application.Spec.TermsOfServiceUri) ||
-            application.Spec.Contacts.Any())
-        {
-            throw new IdPException(
-                "Authentik OIDC application support currently does not reconcile OIDC client metadata fields such as clientUri, logoUri, policyUri, termsOfServiceUri or contacts.",
-                IdPExceptionReason.IdpValidationFailed);
-        }
-    }
-
-    private async Task<IEnumerable<string>> ResolveScopeMappingIdsAsync(
-        IdPOidcApplication application,
-        CancellationToken cancellationToken)
-    {
-        var scopeNames = application.Spec.Scopes
-            .Where(scope => !string.IsNullOrWhiteSpace(scope))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-        var scopeMappingTasks = scopeNames.Select(scope => ResolveScopeMappingIdAsync(
-            application,
-            scope,
-            cancellationToken));
-
-        var scopeMappingIds = await Task.WhenAll(scopeMappingTasks);
-        return scopeMappingIds.Order(StringComparer.OrdinalIgnoreCase);
-    }
-
-    private async Task<string> ResolveScopeMappingIdAsync(
-        IdPOidcApplication application,
-        string scope,
-        CancellationToken cancellationToken)
-    {
-        var page = await scopeMappingHttpClient.ListByQueryAsync(
-            new Dictionary<string, string> { ["scope_name"] = scope },
-            application.IdPProvider,
-            cancellationToken: cancellationToken);
-        var matches = page.Results
-            .Where(mapping => mapping.scope_name.Equals(scope, StringComparison.OrdinalIgnoreCase))
-            .ToArray();
-
-        if (matches.Length == 0)
-        {
-            throw new IdPException(
-                $"Authentik scope mapping for scope \"{scope}\" was not found.",
-                IdPExceptionReason.IdpValidationFailed);
-        }
-
-        if (matches.Length > 1)
-        {
-            throw new IdPException(
-                $"Found multiple Authentik scope mappings for scope \"{scope}\". Use unique scope names before reconciling this OIDC application.",
-                IdPExceptionReason.IdpValidationFailed);
-        }
-
-        return matches[0].pk;
-    }
-
-    private static string NormalizeOptionalText(string? value)
-    {
-        return string.IsNullOrWhiteSpace(value) ? string.Empty : value;
-    }
-
-    private static string NormalizeLaunchUrl(string? value)
-    {
-        var normalized = NormalizeOptionalText(value);
-        return normalized.Length == 0 ? normalized : normalized.TrimEnd('/');
+        return await applicationRepository.UpdateAsync(current.slug, desired, command.Entity.IdPProvider, cancellationToken);
     }
 
     private static IdPCommandResult<IdPOidcApplication> Result(
@@ -386,13 +230,4 @@ public partial class AuthentikOidcApplicationHandler(
             .Replace("/", string.Empty)
             .Replace("=", string.Empty);
     }
-
-    private static string Slug(string value)
-    {
-        var slug = SlugRegex().Replace(value.ToLowerInvariant(), "-").Trim('-');
-        return string.IsNullOrWhiteSpace(slug) ? "oidc-application" : slug;
-    }
-
-    [GeneratedRegex("[^a-z0-9]+")]
-    private static partial Regex SlugRegex();
 }

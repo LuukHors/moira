@@ -1,10 +1,8 @@
 using Microsoft.Extensions.Logging;
-using Moira.Authentik.Application.Mappers;
+using Moira.Authentik.Application.Builders;
 using Moira.Authentik.Application.Ports;
-using Moira.Authentik.Application.UpdateCheckers;
 using Moira.Authentik.Domain.Groups;
 using Moira.Common.Commands;
-using Moira.Common.Exceptions;
 using Moira.Common.Mappers;
 using Moira.Common.Models;
 using Moira.Common.Provider;
@@ -12,30 +10,31 @@ using Moira.Common.Provider;
 namespace Moira.Authentik.Application.Handlers;
 
 public class AuthentikGroupHandler(
-    IHttpService<AuthentikGroupV3, AuthentikGroupV3, string> httpClient,
+    IAuthentikRepository<AuthentikGroupV3, AuthentikGroupV3, string> groupRepository,
+    IAuthentikGroupBuilder groupBuilder,
     IUpdateChecker<AuthentikGroupV3, AuthentikGroupV3> updateChecker,
     ILogger<AuthentikGroupHandler> logger) : IAuthentikHandler<IdPGroup, AuthentikGroupV3>
 {
-    private readonly IReadOnlyDictionary<string, object> _defaultAttributes = new Dictionary<string, object> { ["managed-by"] = "moira" } ;
+    private static readonly IReadOnlyDictionary<string, object> DefaultAttributes = new Dictionary<string, object> { ["managed-by"] = "moira" };
 
     public async Task<AuthentikGroupV3?> GetAsync(IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(command.Entity.Status.GroupId))
         {
             logger.LogDebug("Looking up Authentik group by display name {DisplayName}", command.Entity.Spec.DisplayName);
-            return await httpClient.GetByNameAsync(command.Entity.Spec.DisplayName, command.Entity.IdPProvider, _defaultAttributes, cancellationToken);
+            return await groupRepository.GetByNameAsync(command.Entity.Spec.DisplayName, command.Entity.IdPProvider, DefaultAttributes, cancellationToken);
         }
 
         logger.LogDebug("Looking up Authentik group by group id {GroupId}", command.Entity.Status.GroupId);
-        return await httpClient.GetByIdAsync(command.Entity.Status.GroupId, command.Entity.IdPProvider, _defaultAttributes, cancellationToken);
+        return await groupRepository.GetByIdAsync(command.Entity.Status.GroupId, command.Entity.IdPProvider, DefaultAttributes, cancellationToken);
     }
 
     public async Task<IdPCommandResult<IdPGroup>> CreateAsync(IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
     {
-        var group = await BuildAuthentikGroupAsync(command, cancellationToken);
+        var group = await groupBuilder.BuildAsync(command, cancellationToken);
         logger.LogInformation("Group does not exist, creating group {DisplayName} with {ParentGroupCount} parent groups", group.name, group.parents.Count());
 
-        var result = await httpClient.CreateAsync(group, command.Entity.IdPProvider, cancellationToken);
+        var result = await groupRepository.CreateAsync(group, command.Entity.IdPProvider, cancellationToken);
         logger.LogInformation("Created Authentik group {DisplayName} with group id {GroupId}", result.name, result.pk);
 
         return new IdPCommandResult<IdPGroup>(command.Id, command.Entity.CopyWithNewStatus(new IdPGroupStatus(
@@ -47,7 +46,7 @@ public class AuthentikGroupHandler(
 
     public async Task<IdPCommandResult<IdPGroup>> UpdateAsync(AuthentikGroupV3 current, IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
     {
-        var group = await BuildAuthentikGroupAsync(command, cancellationToken);
+        var group = await groupBuilder.BuildAsync(command, cancellationToken);
 
         if (!updateChecker.ShouldUpdate(group, current))
         {
@@ -62,7 +61,7 @@ public class AuthentikGroupHandler(
 
         logger.LogInformation("Group {DisplayName} is not up to date, updating group id {GroupId} with {ParentGroupCount} parent groups", group.name, current.pk, group.parents.Count());
 
-        var result = await httpClient.UpdateAsync(current.pk!, group, command.Entity.IdPProvider, cancellationToken);
+        var result = await groupRepository.UpdateAsync(current.pk!, group, command.Entity.IdPProvider, cancellationToken);
         logger.LogInformation("Updated Authentik group {DisplayName} with group id {GroupId}", result.name, result.pk);
 
         return new IdPCommandResult<IdPGroup>(command.Id, command.Entity.CopyWithNewStatus(new IdPGroupStatus(
@@ -87,34 +86,8 @@ public class AuthentikGroupHandler(
         }
 
         logger.LogInformation("Auto delete is enabled, deleting group id {GroupId}", command.Entity.Status.GroupId);
-        var deleted = await httpClient.DeleteAsync(command.Entity.Status.GroupId, command.Entity.IdPProvider, cancellationToken);
+        var deleted = await groupRepository.DeleteAsync(command.Entity.Status.GroupId, command.Entity.IdPProvider, cancellationToken);
         logger.LogInformation("Delete request for group id {GroupId} completed with deleted result {GroupDeleted}", command.Entity.Status.GroupId, deleted);
         return deleted;
-    }
-
-    private async Task<AuthentikGroupV3> BuildAuthentikGroupAsync(IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
-    {
-        var parentIds = await ResolveParentIdsAsync(command, cancellationToken);
-        return command.Entity.ToAuthentikGroup(parentIds, _defaultAttributes);
-    }
-
-    private async Task<IEnumerable<string>> ResolveParentIdsAsync(IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
-    {
-        var memberOfNames = command.Entity.Spec.MemberOf
-            .Where(memberOf => !string.IsNullOrEmpty(memberOf))
-            .Distinct()
-            .ToList();
-
-        logger.LogDebug("Resolving {ParentGroupCount} parent groups", memberOfNames.Count);
-
-        var parentTasks = memberOfNames.Select(async memberOf =>
-        {
-            var parent = await httpClient.GetByNameAsync(memberOf, command.Entity.IdPProvider, null, cancellationToken)
-                ?? throw new IdPException($"Could not find parent group '{memberOf}'", IdPExceptionReason.IdpValidationFailed);
-
-            return parent.pk!;
-        });
-
-        return await Task.WhenAll(parentTasks);
     }
 }

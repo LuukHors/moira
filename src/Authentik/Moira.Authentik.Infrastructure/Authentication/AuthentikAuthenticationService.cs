@@ -3,7 +3,6 @@ using System.Net;
 using Flurl;
 using Flurl.Http;
 using Microsoft.Extensions.Logging;
-using Moira.Authentik.Application.Ports;
 using Moira.Common.Exceptions;
 using Moira.Common.Models;
 

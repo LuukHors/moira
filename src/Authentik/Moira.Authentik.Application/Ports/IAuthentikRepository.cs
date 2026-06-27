@@ -3,7 +3,7 @@ using Moira.Common.Models;
 
 namespace Moira.Authentik.Application.Ports;
 
-public interface IHttpService<TModel, in TModelWrite, in TId>
+public interface IAuthentikRepository<TModel, in TModelWrite, in TId>
 {
     Task<AuthentikPageResult<TModel>> ListAsync(string? name, IReadOnlyDictionary<string, object>? attributes, IdPProvider provider, TId? id = default, CancellationToken cancellationToken = default);
     Task<AuthentikPageResult<TModel>> ListByQueryAsync(IReadOnlyDictionary<string, string> query, IdPProvider provider, TId? id = default, CancellationToken cancellationToken = default);

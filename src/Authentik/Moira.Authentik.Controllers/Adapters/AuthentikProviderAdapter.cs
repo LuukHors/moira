@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Moira.Authentik.Application.Ports;
+using Moira.Authentik.Infrastructure.Authentication;
 using Moira.Common.Commands;
 using Moira.Common.Models;
 using Moira.Common.Provider;

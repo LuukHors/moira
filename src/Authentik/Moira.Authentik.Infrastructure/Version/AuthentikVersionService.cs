@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using Flurl;
 using Flurl.Http;
 using Moira.Authentik.Application.Ports;
+using Moira.Authentik.Infrastructure.Authentication;
 using Moira.Authentik.Domain;
 using Moira.Common.Models;
 
