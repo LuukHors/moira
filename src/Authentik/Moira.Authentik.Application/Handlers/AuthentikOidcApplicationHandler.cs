@@ -1,5 +1,4 @@
 using System.Security.Cryptography;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Moira.Authentik.Application.Ports;
@@ -7,6 +6,7 @@ using Moira.Authentik.Domain.Applications;
 using Moira.Common.Commands;
 using Moira.Common.Exceptions;
 using Moira.Common.Models;
+using Moira.Common.Provider;
 
 namespace Moira.Authentik.Application.Handlers;
 
@@ -15,6 +15,8 @@ public partial class AuthentikOidcApplicationHandler(
     IHttpService<AuthentikOAuth2ProviderV3, AuthentikOAuth2ProviderV3, int> providerHttpClient,
     IHttpService<AuthentikScopeMappingV3, AuthentikScopeMappingV3, string> scopeMappingHttpClient,
     IHttpService<AuthentikFlowV3, AuthentikFlowV3, string> flowHttpClient,
+    IUpdateChecker<AuthentikOAuth2ProviderV3, AuthentikOAuth2ProviderV3> providerUpdateChecker,
+    IUpdateChecker<AuthentikApplicationV3, AuthentikApplicationV3> applicationUpdateChecker,
     ILogger<AuthentikOidcApplicationHandler> logger) : IAuthentikOidcApplicationHandler
 {
     private const string DefaultAuthorizationFlowSlug = "default-provider-authorization-explicit-consent";
@@ -178,7 +180,7 @@ public partial class AuthentikOidcApplicationHandler(
         IdPCommand<IdPOidcApplication> command,
         CancellationToken cancellationToken)
     {
-        if (!ShouldUpdate(current, desired, shouldRotate))
+        if (!shouldRotate && !providerUpdateChecker.ShouldUpdate(desired, current))
         {
             logger.LogInformation("OIDC provider {ProviderName} is already up to date with provider id {ProviderId}", current.name, current.pk);
             return current;
@@ -194,7 +196,7 @@ public partial class AuthentikOidcApplicationHandler(
         IdPCommand<IdPOidcApplication> command,
         CancellationToken cancellationToken)
     {
-        if (!ShouldUpdate(current, desired))
+        if (!applicationUpdateChecker.ShouldUpdate(desired, current))
         {
             logger.LogInformation("OIDC application {DisplayName} is already up to date with application id {ApplicationId}", current.name, current.slug);
             return current;
@@ -282,56 +284,6 @@ public partial class AuthentikOidcApplicationHandler(
             NormalizeLaunchUrl(application.Spec.LaunchUrl));
     }
 
-    private static bool ShouldUpdate(
-        AuthentikOAuth2ProviderV3 current,
-        AuthentikOAuth2ProviderV3 desired,
-        bool shouldRotate)
-    {
-        if (!string.Equals(desired.name, current.name, StringComparison.Ordinal))
-            return true;
-
-        if (!string.Equals(desired.client_id, current.client_id, StringComparison.Ordinal))
-            return true;
-
-        if (!string.Equals(desired.client_type, current.client_type, StringComparison.OrdinalIgnoreCase))
-            return true;
-
-        if (shouldRotate)
-            return true;
-
-        if (!string.Equals(desired.authorization_flow, current.authorization_flow, StringComparison.Ordinal))
-            return true;
-
-        if (!string.Equals(desired.invalidation_flow, current.invalidation_flow, StringComparison.Ordinal))
-            return true;
-
-        if (!string.Equals(
-                NormalizeOptionalText(desired.logout_uri),
-                NormalizeOptionalText(current.logout_uri),
-                StringComparison.Ordinal))
-            return true;
-
-        var desiredPropertyMappings = ToAuthentikReferenceIdSet(desired.property_mappings);
-        var currentPropertyMappings = ToAuthentikReferenceIdSet(current.property_mappings);
-        if (!desiredPropertyMappings.SetEquals(currentPropertyMappings))
-            return true;
-
-        var desiredRedirectUris = (desired.redirect_uris ?? [])
-            .Select(uri => (
-                NormalizeRequiredText(uri.matching_mode).ToUpperInvariant(),
-                NormalizeRequiredText(uri.url),
-                NormalizeRedirectUriType(uri.redirect_uri_type)))
-            .ToHashSet();
-        var currentRedirectUris = (current.redirect_uris ?? [])
-            .Select(uri => (
-                NormalizeRequiredText(uri.matching_mode).ToUpperInvariant(),
-                NormalizeRequiredText(uri.url),
-                NormalizeRedirectUriType(uri.redirect_uri_type)))
-            .ToHashSet();
-
-        return !desiredRedirectUris.SetEquals(currentRedirectUris);
-    }
-
     private static void ValidateSupportedCoreProperties(IdPOidcApplication application)
     {
         if (!string.IsNullOrWhiteSpace(application.Spec.ClientUri) ||
@@ -393,41 +345,6 @@ public partial class AuthentikOidcApplicationHandler(
         return matches[0].pk;
     }
 
-    private static bool ShouldUpdate(AuthentikApplicationV3 current, AuthentikApplicationV3 desired)
-    {
-        return !string.Equals(desired.name, current.name, StringComparison.Ordinal)
-               || !string.Equals(desired.slug, current.slug, StringComparison.Ordinal)
-               || !desired.provider.Equals(current.provider)
-               || !string.Equals(
-                   NormalizeLaunchUrl(desired.meta_launch_url),
-                   NormalizeLaunchUrl(current.meta_launch_url),
-                   StringComparison.Ordinal);
-    }
-
-    private static ISet<string> ToAuthentikReferenceIdSet(IEnumerable<object>? values)
-    {
-        return (values ?? [])
-            .Select(NormalizeAuthentikReferenceId)
-            .Where(value => !string.IsNullOrWhiteSpace(value))
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-    }
-
-    private static string NormalizeAuthentikReferenceId(object? value)
-    {
-        return value switch
-        {
-            null => string.Empty,
-            string text => text,
-            int number => number.ToString(),
-            long number => number.ToString(),
-            JsonElement { ValueKind: JsonValueKind.String } element => element.GetString() ?? string.Empty,
-            JsonElement { ValueKind: JsonValueKind.Number } element => element.GetRawText(),
-            JsonElement { ValueKind: JsonValueKind.Object } element when element.TryGetProperty("pk", out var pk) =>
-                NormalizeAuthentikReferenceId(pk),
-            _ => value.ToString() ?? string.Empty
-        };
-    }
-
     private static string NormalizeOptionalText(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? string.Empty : value;
@@ -437,16 +354,6 @@ public partial class AuthentikOidcApplicationHandler(
     {
         var normalized = NormalizeOptionalText(value);
         return normalized.Length == 0 ? normalized : normalized.TrimEnd('/');
-    }
-
-    private static string NormalizeRequiredText(string? value)
-    {
-        return value ?? string.Empty;
-    }
-
-    private static string NormalizeRedirectUriType(string? value)
-    {
-        return string.IsNullOrWhiteSpace(value) ? "AUTHORIZATION" : value.ToUpperInvariant();
     }
 
     private static IdPCommandResult<IdPOidcApplication> Result(

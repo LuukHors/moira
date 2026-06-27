@@ -1,16 +1,19 @@
 using Microsoft.Extensions.Logging;
 using Moira.Authentik.Application.Mappers;
 using Moira.Authentik.Application.Ports;
+using Moira.Authentik.Application.UpdateCheckers;
 using Moira.Authentik.Domain.Groups;
 using Moira.Common.Commands;
 using Moira.Common.Exceptions;
 using Moira.Common.Mappers;
 using Moira.Common.Models;
+using Moira.Common.Provider;
 
 namespace Moira.Authentik.Application.Handlers;
 
 public class AuthentikGroupHandler(
     IHttpService<AuthentikGroupV3, AuthentikGroupV3, string> httpClient,
+    IUpdateChecker<AuthentikGroupV3, AuthentikGroupV3> updateChecker,
     ILogger<AuthentikGroupHandler> logger) : IAuthentikHandler<IdPGroup, AuthentikGroupV3>
 {
     private readonly IReadOnlyDictionary<string, object> _defaultAttributes = new Dictionary<string, object> { ["managed-by"] = "moira" } ;
@@ -46,7 +49,7 @@ public class AuthentikGroupHandler(
     {
         var group = await BuildAuthentikGroupAsync(command, cancellationToken);
 
-        if (!ShouldUpdate(current, group))
+        if (!updateChecker.ShouldUpdate(group, current))
         {
             logger.LogInformation("Group {DisplayName} is already up to date with group id {GroupId}", current.name, current.pk);
 
@@ -87,17 +90,6 @@ public class AuthentikGroupHandler(
         var deleted = await httpClient.DeleteAsync(command.Entity.Status.GroupId, command.Entity.IdPProvider, cancellationToken);
         logger.LogInformation("Delete request for group id {GroupId} completed with deleted result {GroupDeleted}", command.Entity.Status.GroupId, deleted);
         return deleted;
-    }
-
-    private static bool ShouldUpdate(AuthentikGroupV3 currentEntity, AuthentikGroupV3 desiredEntity)
-    {
-        if (!desiredEntity.name.Equals(currentEntity.name))
-            return true;
-
-        var desiredParentIds = desiredEntity.parents.ToHashSet();
-        var currentParentIds = currentEntity.parents.ToHashSet();
-
-        return !desiredParentIds.SetEquals(currentParentIds);
     }
 
     private async Task<AuthentikGroupV3> BuildAuthentikGroupAsync(IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
