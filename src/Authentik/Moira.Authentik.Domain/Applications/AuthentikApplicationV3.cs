@@ -6,7 +6,6 @@ public record AuthentikApplicationV3(
     string? pk,
     int? provider,
     string? meta_launch_url,
-    string? meta_icon,
     string? meta_icon_url,
     string? meta_description,
     string? meta_publisher,

@@ -32,6 +32,11 @@ public class AuthentikOAuth2ProviderBuilder(
             "redirectUriMatchingMode",
             DefaultRedirectUriMatchingMode) ?? DefaultRedirectUriMatchingMode;
 
+        static string? NonEmpty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
+        var accessCodeValidity = NonEmpty(application.Spec.ProviderSettings?.Values.GetValueOrDefault("accessCodeValidity"));
+        var accessTokenValidity = NonEmpty(application.Spec.ProviderSettings?.Values.GetValueOrDefault("accessTokenValidity"));
+        var refreshTokenValidity = NonEmpty(application.Spec.ProviderSettings?.Values.GetValueOrDefault("refreshTokenValidity"));
+
         var authorizationFlowTask = flowBuilder.BuildAsync(application.IdPProvider, authorizationFlowSlug, cancellationToken);
         var invalidationFlowTask = flowBuilder.BuildAsync(application.IdPProvider, invalidationFlowSlug, cancellationToken);
         var scopeMappingIdsTask = scopeMappingBuilder.BuildAsync(application.Spec.Scopes, application.IdPProvider, cancellationToken);
@@ -51,7 +56,10 @@ public class AuthentikOAuth2ProviderBuilder(
             property_mappings = scopeMappingIdsTask.Result.Cast<object>().ToArray(),
             logout_uri = application.Spec.LogoutUri,
             redirect_uris = application.Spec.RedirectUris
-                .Select(uri => new AuthentikRedirectUriV3(redirectUriMatchingMode, uri))
+                .Select(uri => new AuthentikRedirectUriV3(redirectUriMatchingMode, uri)),
+            access_code_validity = accessCodeValidity,
+            access_token_validity = accessTokenValidity,
+            refresh_token_validity = refreshTokenValidity
         };
     }
 

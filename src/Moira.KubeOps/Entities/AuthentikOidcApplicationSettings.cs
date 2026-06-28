@@ -25,9 +25,10 @@ public class AuthentikOidcApplicationSettings : CustomKubernetesEntity<Authentik
 
     public class MetadataSettings
     {
-        public string Description { get; set; }
-        public string Icon { get; set; }
-        public string Publisher { get; set; }
+        public string Description { get; set; } = string.Empty;
+        public string Icon { get; set; } = string.Empty;
+        public string Publisher { get; set; } = string.Empty;
+        public bool OpenInNewTab { get; set; } = false;
     }
 
     public class SettingsStatus

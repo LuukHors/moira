@@ -1,13 +1,13 @@
 using Moira.Common.Models;
 using Moira.KubeOps.Entities;
 
-namespace Moira.KubeOps.AdapterHandler.DependencyProvider.OidcProviderSettings;
+namespace Moira.KubeOps.AdapterHandler.DependencyProvider;
 
-public interface IOidcProviderSettingsResolver
+public interface IProviderSettingsResolver<TSettings>
 {
     bool CanResolve(IdPProvider provider, ResourceRef settingsRef);
 
-    Task<Moira.Common.Models.OidcProviderSettings> ResolveAsync(
+    Task<TSettings> ResolveAsync(
         ResourceRef settingsRef,
         string defaultNamespace,
         IdPProvider provider,

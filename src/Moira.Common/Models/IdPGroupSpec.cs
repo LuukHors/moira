@@ -3,4 +3,5 @@
 public record IdPGroupSpec(
     string DisplayName,
     IEnumerable<string> MemberOf,
-    bool AutoDelete);
+    bool AutoDelete,
+    GroupProviderSettings? ProviderSettings = null);

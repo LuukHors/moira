@@ -4,7 +4,6 @@ using KubeOps.KubernetesClient;
 using Microsoft.Extensions.Logging;
 using Moira.Common.Exceptions;
 using Moira.Common.Models;
-using Moira.KubeOps.AdapterHandler.DependencyProvider.OidcProviderSettings;
 using Moira.KubeOps.Entities;
 using Moira.KubeOps.Secrets;
 using Moira.KubeOps.Secrets.Models;
@@ -15,7 +14,7 @@ namespace Moira.KubeOps.AdapterHandler.DependencyProvider;
 public class OidcApplicationDependencyProvider(
     IKubernetesClient client,
     IDependencyProvider<Provider, IdPProvider> providerDependencyProvider,
-    IOidcProviderSettingsService providerSettingsService,
+    IProviderSettingsService<OidcApplication, OidcProviderSettings> providerSettingsService,
     ILogger<OidcApplicationDependencyProvider> logger) : IDependencyProvider<OidcApplication, IdPOidcApplication>
 {
     public async Task<IdPOidcApplication> ResolveAsync(OidcApplication entity, CancellationToken cancellationToken)

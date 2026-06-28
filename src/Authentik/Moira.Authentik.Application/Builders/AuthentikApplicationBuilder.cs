@@ -10,13 +10,18 @@ public partial class AuthentikApplicationBuilder : IAuthentikApplicationBuilder
     public AuthentikApplicationV3 Build(OidcProviderSettings providerSettings, IdPOidcApplication application, int? providerId, string? applicationPk)
     {
         var settings = providerSettings.ToAuthentikSettings();
-        
+
         return new AuthentikApplicationV3(
             application.Spec.DisplayName,
             Slug(application.Name),
             applicationPk,
             providerId,
-            NormalizeLaunchUrl(application.Spec.LaunchUrl));
+            NormalizeLaunchUrl(application.Spec.LaunchUrl),
+            meta_icon_url: settings.Metadata.Icon,
+            meta_description: settings.Metadata.Description,
+            meta_publisher: settings.Metadata.Publisher,
+            open_in_new_tab: settings.Metadata.OpenInNewTab,
+            group: NormalizeOptionalText(settings.Group));
     }
 
     private static string NormalizeOptionalText(string? value)
