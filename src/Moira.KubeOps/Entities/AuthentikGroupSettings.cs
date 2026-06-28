@@ -1,3 +1,4 @@
+using k8s.Models;
 using KubeOps.Abstractions.Entities;
 
 namespace Moira.KubeOps.Entities;

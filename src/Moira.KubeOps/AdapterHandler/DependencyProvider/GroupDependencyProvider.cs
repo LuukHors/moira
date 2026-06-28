@@ -1,3 +1,4 @@
+using k8s.Models;
 using KubeOps.KubernetesClient;
 using Microsoft.Extensions.Logging;
 using Moira.Common.Exceptions;
@@ -10,7 +11,7 @@ namespace Moira.KubeOps.AdapterHandler.DependencyProvider;
 public class GroupDependencyProvider(
     IKubernetesClient client,
     IDependencyProvider<Provider, IdPProvider> providerDependencyProvider,
-    IProviderSettingsService<Group, GroupProviderSettings> providerSettingsService,
+    IProviderSettingsService<Group, Common.Models.GroupProviderSettings> providerSettingsService,
     ILogger<GroupDependencyProvider> logger) : IDependencyProvider<Group, IdPGroup>
 {
     public async Task<IdPGroup> ResolveAsync(Group entity, CancellationToken cancellationToken)

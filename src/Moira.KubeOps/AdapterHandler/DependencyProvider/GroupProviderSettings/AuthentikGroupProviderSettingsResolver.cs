@@ -6,7 +6,7 @@ using Moira.KubeOps.Entities;
 namespace Moira.KubeOps.AdapterHandler.DependencyProvider.GroupProviderSettings;
 
 public class AuthentikGroupProviderSettingsResolver(
-    IKubernetesClient client) : IProviderSettingsResolver<GroupProviderSettings>
+    IKubernetesClient client) : IProviderSettingsResolver<Common.Models.GroupProviderSettings>
 {
     private const string SupportedApiVersion = "moira.operator/v1alpha1";
     private const string SupportedKind = "AuthentikGroupSettings";
@@ -17,7 +17,7 @@ public class AuthentikGroupProviderSettingsResolver(
                settingsRef.Kind.Equals(SupportedKind, StringComparison.OrdinalIgnoreCase);
     }
 
-    public async Task<GroupProviderSettings> ResolveAsync(
+    public async Task<Common.Models.GroupProviderSettings> ResolveAsync(
         ResourceRef settingsRef,
         string defaultNamespace,
         IdPProvider provider,
@@ -44,7 +44,7 @@ public class AuthentikGroupProviderSettingsResolver(
                 $"Unable to get AuthentikGroupSettings with name \"{settingsRef.Name}\" in namespace \"{settingsNamespace}\".");
         }
 
-        return new GroupProviderSettings(
+        return new Common.Models.GroupProviderSettings(
             settingsRef.Kind,
             new Dictionary<string, string>(settings.Spec.Attributes));
     }

@@ -14,7 +14,7 @@ namespace Moira.KubeOps.AdapterHandler.DependencyProvider;
 public class OidcApplicationDependencyProvider(
     IKubernetesClient client,
     IDependencyProvider<Provider, IdPProvider> providerDependencyProvider,
-    IProviderSettingsService<OidcApplication, OidcProviderSettings> providerSettingsService,
+    IProviderSettingsService<OidcApplication, Common.Models.OidcProviderSettings> providerSettingsService,
     ILogger<OidcApplicationDependencyProvider> logger) : IDependencyProvider<OidcApplication, IdPOidcApplication>
 {
     public async Task<IdPOidcApplication> ResolveAsync(OidcApplication entity, CancellationToken cancellationToken)

@@ -7,7 +7,7 @@ using Moira.KubeOps.Entities;
 namespace Moira.KubeOps.AdapterHandler.DependencyProvider.OidcProviderSettings;
 
 public class AuthentikOidcProviderSettingsResolver(
-    IKubernetesClient client) : IProviderSettingsResolver<OidcProviderSettings>
+    IKubernetesClient client) : IProviderSettingsResolver<Common.Models.OidcProviderSettings>
 {
     private const string SupportedApiVersion = "moira.operator/v1alpha1";
     private const string SupportedKind = "AuthentikOidcApplicationSettings";
@@ -18,7 +18,7 @@ public class AuthentikOidcProviderSettingsResolver(
                settingsRef.Kind.Equals(SupportedKind, StringComparison.OrdinalIgnoreCase);
     }
 
-    public async Task<OidcProviderSettings> ResolveAsync(
+    public async Task<Common.Models.OidcProviderSettings> ResolveAsync(
         ResourceRef settingsRef,
         string defaultNamespace,
         IdPProvider provider,
@@ -45,7 +45,7 @@ public class AuthentikOidcProviderSettingsResolver(
                 $"Unable to get AuthentikOidcApplicationSettings with name \"{settingsRef.Name}\" in namespace \"{settingsNamespace}\".");
         }
 
-        return new OidcProviderSettings(
+        return new Common.Models.OidcProviderSettings(
             settingsRef.Kind,
             new Dictionary<string, string>
             {

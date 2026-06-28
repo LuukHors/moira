@@ -3,8 +3,8 @@ using Moira.KubeOps.Entities;
 
 namespace Moira.KubeOps.AdapterHandler.DependencyProvider.GroupProviderSettings;
 
-public class GroupProviderSettingsService(IEnumerable<IProviderSettingsResolver<GroupProviderSettings>> resolvers)
-    : ProviderSettingsService<Group, GroupProviderSettings>(
+public class GroupProviderSettingsService(IEnumerable<IProviderSettingsResolver<Common.Models.GroupProviderSettings>> resolvers)
+    : ProviderSettingsService<Group, Common.Models.GroupProviderSettings>(
         resolvers,
         e => e.Spec.ProviderSettingsRef,
         e => e.Metadata.NamespaceProperty ?? string.Empty);
