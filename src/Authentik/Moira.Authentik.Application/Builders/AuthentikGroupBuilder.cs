@@ -5,6 +5,7 @@ using Moira.Authentik.Domain.Groups;
 using Moira.Common.Commands;
 using Moira.Common.Exceptions;
 using Moira.Common.Models;
+using Moira.Authentik.Domain.ProviderSettings;
 
 namespace Moira.Authentik.Application.Builders;
 
@@ -18,7 +19,19 @@ public class AuthentikGroupBuilder(
     public async Task<AuthentikGroupV3> BuildAsync(IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
     {
         var parentIds = await ResolveParentIdsAsync(command, cancellationToken);
-        return command.Entity.ToAuthentikGroup(parentIds, DefaultAttributes);
+        var attributes = MergeAttributes(command.Entity.Spec.ProviderSettings);
+        return command.Entity.ToAuthentikGroup(parentIds, attributes);
+    }
+
+    private static IReadOnlyDictionary<string, object> MergeAttributes(GroupProviderSettings? providerSettings)
+    {
+        if (providerSettings is null)
+            return DefaultAttributes;
+
+        var settings = providerSettings.ToAuthentikSettings();
+        return DefaultAttributes
+            .Concat(settings.Attributes.Values.Select(kv => new KeyValuePair<string, object>(kv.Key, kv.Value)))
+            .ToDictionary(kv => kv.Key, kv => kv.Value);
     }
 
     private async Task<IEnumerable<string>> ResolveParentIdsAsync(IdPCommand<IdPGroup> command, CancellationToken cancellationToken)

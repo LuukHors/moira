@@ -5,5 +5,5 @@ namespace Moira.Authentik.Application.Builders;
 
 public interface IAuthentikApplicationBuilder
 {
-    AuthentikApplicationV3 Build(IdPOidcApplication application, int? providerId, string? applicationPk);
+    AuthentikApplicationV3 Build(OidcProviderSettings providerSettings, IdPOidcApplication application, int? providerId, string? applicationPk);
 }

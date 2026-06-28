@@ -1,4 +1,3 @@
-using Moira.Authentik.Application.Ports;
 using Moira.Authentik.Domain.Applications;
 using Moira.Common.Exceptions;
 using Moira.Common.Models;
@@ -6,8 +5,8 @@ using Moira.Common.Models;
 namespace Moira.Authentik.Application.Builders;
 
 public class AuthentikOAuth2ProviderBuilder(
-    IAuthentikRepository<AuthentikScopeMappingV3, AuthentikScopeMappingV3, string> scopeMappingRepository,
-    IAuthentikRepository<AuthentikFlowV3, AuthentikFlowV3, string> flowRepository) : IAuthentikOAuth2ProviderBuilder
+    IAuthentikFlowBuilder flowBuilder,
+    IAuthentikScopeMappingBuilder scopeMappingBuilder) : IAuthentikOAuth2ProviderBuilder
 {
     private const string DefaultAuthorizationFlowSlug = "default-provider-authorization-explicit-consent";
     private const string DefaultInvalidationFlowSlug = "default-provider-invalidation-flow";
@@ -33,9 +32,14 @@ public class AuthentikOAuth2ProviderBuilder(
             "redirectUriMatchingMode",
             DefaultRedirectUriMatchingMode) ?? DefaultRedirectUriMatchingMode;
 
-        var authorizationFlowTask = GetFlowIdAsync(application.IdPProvider, authorizationFlowSlug, cancellationToken);
-        var invalidationFlowTask = GetFlowIdAsync(application.IdPProvider, invalidationFlowSlug, cancellationToken);
-        var scopeMappingIdsTask = ResolveScopeMappingIdsAsync(application, cancellationToken);
+        static string? NonEmpty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
+        var accessCodeValidity = NonEmpty(application.Spec.ProviderSettings?.Values.GetValueOrDefault("accessCodeValidity"));
+        var accessTokenValidity = NonEmpty(application.Spec.ProviderSettings?.Values.GetValueOrDefault("accessTokenValidity"));
+        var refreshTokenValidity = NonEmpty(application.Spec.ProviderSettings?.Values.GetValueOrDefault("refreshTokenValidity"));
+
+        var authorizationFlowTask = flowBuilder.BuildAsync(application.IdPProvider, authorizationFlowSlug, cancellationToken);
+        var invalidationFlowTask = flowBuilder.BuildAsync(application.IdPProvider, invalidationFlowSlug, cancellationToken);
+        var scopeMappingIdsTask = scopeMappingBuilder.BuildAsync(application.Spec.Scopes, application.IdPProvider, cancellationToken);
 
         await Task.WhenAll(authorizationFlowTask, invalidationFlowTask, scopeMappingIdsTask);
 
@@ -52,61 +56,11 @@ public class AuthentikOAuth2ProviderBuilder(
             property_mappings = scopeMappingIdsTask.Result.Cast<object>().ToArray(),
             logout_uri = application.Spec.LogoutUri,
             redirect_uris = application.Spec.RedirectUris
-                .Select(uri => new AuthentikRedirectUriV3(redirectUriMatchingMode, uri))
+                .Select(uri => new AuthentikRedirectUriV3(redirectUriMatchingMode, uri)),
+            access_code_validity = accessCodeValidity,
+            access_token_validity = accessTokenValidity,
+            refresh_token_validity = refreshTokenValidity
         };
-    }
-
-    private async Task<string> GetFlowIdAsync(IdPProvider provider, string flowSlug, CancellationToken cancellationToken)
-    {
-        var flow = await flowRepository.GetByIdAsync(flowSlug, provider, null, cancellationToken);
-
-        if (flow is null || string.IsNullOrWhiteSpace(flow.pk))
-        {
-            throw new IdPException(
-                $"Authentik flow \"{flowSlug}\" was not found.",
-                IdPExceptionReason.IdpValidationFailed);
-        }
-
-        return flow.pk;
-    }
-
-    private async Task<IEnumerable<string>> ResolveScopeMappingIdsAsync(IdPOidcApplication application, CancellationToken cancellationToken)
-    {
-        var scopeNames = application.Spec.Scopes
-            .Where(scope => !string.IsNullOrWhiteSpace(scope))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-        var scopeMappingTasks = scopeNames.Select(scope => ResolveScopeMappingIdAsync(application, scope, cancellationToken));
-
-        var scopeMappingIds = await Task.WhenAll(scopeMappingTasks);
-        return scopeMappingIds.Order(StringComparer.OrdinalIgnoreCase);
-    }
-
-    private async Task<string> ResolveScopeMappingIdAsync(IdPOidcApplication application, string scope, CancellationToken cancellationToken)
-    {
-        var page = await scopeMappingRepository.ListByQueryAsync(
-            new Dictionary<string, string> { ["scope_name"] = scope },
-            application.IdPProvider,
-            cancellationToken: cancellationToken);
-        var matches = page.Results
-            .Where(mapping => mapping.scope_name.Equals(scope, StringComparison.OrdinalIgnoreCase))
-            .ToArray();
-
-        if (matches.Length == 0)
-        {
-            throw new IdPException(
-                $"Authentik scope mapping for scope \"{scope}\" was not found.",
-                IdPExceptionReason.IdpValidationFailed);
-        }
-
-        if (matches.Length > 1)
-        {
-            throw new IdPException(
-                $"Found multiple Authentik scope mappings for scope \"{scope}\". Use unique scope names before reconciling this OIDC application.",
-                IdPExceptionReason.IdpValidationFailed);
-        }
-
-        return matches[0].pk;
     }
 
     private static void ValidateSupportedCoreProperties(IdPOidcApplication application)

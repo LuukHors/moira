@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Net;
 using Flurl;
 using Flurl.Http;
 using Microsoft.Extensions.Logging;
@@ -93,12 +92,9 @@ public class AuthentikAuthenticationService(
         }
         catch (FlurlHttpTimeoutException ex)
         {
-            throw new IdPHttpException(
+            throw new IdPException(
                 "Request was not able to be completed within 10 seconds",
-                HttpStatusCode.RequestTimeout,
-                "POST",
-                endpoint,
-                (int)HttpStatusCode.RequestTimeout,
+                IdPExceptionReason.IdpRequestFailed,
                 ex);
         }
         catch (FlurlHttpException ex)
@@ -114,7 +110,7 @@ public class AuthentikAuthenticationService(
                     ex);
             }
 
-            throw new IdPHttpException(message, null, "POST", endpoint, ex.StatusCode, ex);
+            throw new IdPException(message, IdPExceptionReason.IdpRequestFailed, ex);
         }
     }
 

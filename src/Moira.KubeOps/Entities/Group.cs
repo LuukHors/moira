@@ -11,6 +11,7 @@ public class Group : CustomKubernetesEntity<Group.GroupSpec, Group.GroupStatus>
         public string DisplayName { get; set; } = string.Empty;
         public IEnumerable<string> MemberOf { get; set; } = [];
         public ProviderRef ProviderRef { get; set; } = new();
+        public ResourceRef? ProviderSettingsRef { get; set; }
         public bool AutoDelete { get; set; } = true;
     }
 

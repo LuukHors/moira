@@ -141,9 +141,9 @@ internal class AuthentikHttpService<TModel, TModelWrite, TId>(
             .WithHeader("Accept", "application/json");
     }
 
-    private static async Task<IdPHttpException> WrapAsync(FlurlHttpException ex, string verb, string path)
+    private static async Task<IdPException> WrapAsync(FlurlHttpException ex, string verb, string path)
     {
         var body = await ex.GetResponseStringAsync();
-        return new IdPHttpException(body, null, verb, path, ex.StatusCode, ex);
+        return new IdPException(body, IdPExceptionReason.IdpRequestFailed, ex);
     }
 }

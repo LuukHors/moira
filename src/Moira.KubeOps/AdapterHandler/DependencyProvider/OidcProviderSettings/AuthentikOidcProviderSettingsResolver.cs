@@ -1,12 +1,13 @@
 using KubeOps.KubernetesClient;
 using Moira.Common.Exceptions;
 using Moira.Common.Models;
+using Moira.KubeOps.AdapterHandler.DependencyProvider;
 using Moira.KubeOps.Entities;
 
 namespace Moira.KubeOps.AdapterHandler.DependencyProvider.OidcProviderSettings;
 
 public class AuthentikOidcProviderSettingsResolver(
-    IKubernetesClient client) : IOidcProviderSettingsResolver
+    IKubernetesClient client) : IProviderSettingsResolver<Moira.Common.Models.OidcProviderSettings>
 {
     private const string SupportedApiVersion = "moira.operator/v1alpha1";
     private const string SupportedKind = "AuthentikOidcApplicationSettings";
@@ -50,7 +51,15 @@ public class AuthentikOidcProviderSettingsResolver(
             {
                 ["authorizationFlowSlug"] = settings.Spec.AuthorizationFlowSlug,
                 ["invalidationFlowSlug"] = settings.Spec.InvalidationFlowSlug,
-                ["redirectUriMatchingMode"] = settings.Spec.RedirectUriMatchingMode
+                ["redirectUriMatchingMode"] = settings.Spec.RedirectUriMatchingMode,
+                ["group"] = settings.Spec.Group,
+                ["accessCodeValidity"] = settings.Spec.TokenSettings.AccessCodeValidity,
+                ["accessTokenValidity"] = settings.Spec.TokenSettings.AccessTokenValidity,
+                ["refreshTokenValidity"] = settings.Spec.TokenSettings.RefreshTokenValidity,
+                ["description"] = settings.Spec.MetadataSettings.Description,
+                ["icon"] = settings.Spec.MetadataSettings.Icon,
+                ["publisher"] = settings.Spec.MetadataSettings.Publisher,
+                ["openInNewTab"] = settings.Spec.MetadataSettings.OpenInNewTab.ToString().ToLowerInvariant()
             });
     }
 }

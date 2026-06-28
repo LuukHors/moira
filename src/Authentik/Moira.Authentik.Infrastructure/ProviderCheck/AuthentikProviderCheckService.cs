@@ -1,4 +1,3 @@
-using System.Net;
 using Flurl;
 using Flurl.Http;
 using Microsoft.Extensions.Logging;
@@ -15,31 +14,7 @@ public class AuthentikProviderCheckService(
 {
     private const int TimeoutSeconds = 10;
 
-    public async Task CheckAsync(IdPProvider provider, CancellationToken cancellationToken)
-    {
-        logger.LogDebug("Checking Authentik provider {ProviderName}", provider.Name);
-
-        if (string.IsNullOrWhiteSpace(provider.BaseUrl))
-        {
-            logger.LogDebug("Authentik provider {ProviderName} does not have a baseUrl", provider.Name);
-            throw new IdPException("Provider baseUrl should not be empty.", IdPExceptionReason.IdpValidationFailed);
-        }
-
-        await CheckHealthAsync(provider, cancellationToken);
-
-        logger.LogDebug("Acquiring Authentik API token for provider {ProviderName}", provider.Name);
-        var token = await authenticationService.AcquireTokenAsync(provider, cancellationToken);
-        logger.LogDebug("Acquired Authentik API token for provider {ProviderName}", provider.Name);
-
-        await CheckAuthenticatedApiAsync(provider, token, cancellationToken);
-
-        logger.LogInformation(
-            "Authentik provider {ProviderName} is reachable and API credentials are usable",
-            provider.Name);
-        logger.LogDebug("Checked Authentik provider {ProviderName}", provider.Name);
-    }
-
-    private async Task CheckHealthAsync(IdPProvider provider, CancellationToken cancellationToken)
+    public async Task CheckHealthAsync(IdPProvider provider, CancellationToken cancellationToken)
     {
         var request = provider.BaseUrl
             .AppendPathSegment("/-/health/ready/")
@@ -64,12 +39,9 @@ public class AuthentikProviderCheckService(
                 request.Url,
                 TimeoutSeconds,
                 provider.Name);
-            throw new IdPHttpException(
+            throw new IdPException(
                 $"Request was not able to be completed within {TimeoutSeconds} seconds",
-                HttpStatusCode.RequestTimeout,
-                "GET",
-                request.Url,
-                (int)HttpStatusCode.RequestTimeout,
+                IdPExceptionReason.IdpRequestFailed,
                 ex);
         }
         catch (FlurlHttpException ex)
@@ -82,6 +54,22 @@ public class AuthentikProviderCheckService(
                 ex.StatusCode);
             throw await WrapRequestExceptionAsync(ex, "GET", request.Url);
         }
+    }
+
+    public async Task CheckAuthenticatedAsync(IdPProvider provider, CancellationToken cancellationToken)
+    {
+        logger.LogDebug("Acquiring Authentik API token for provider {ProviderName}", provider.Name);
+        var token = await authenticationService.AcquireTokenAsync(provider, cancellationToken);
+        logger.LogDebug("Acquired Authentik API token for provider {ProviderName}", provider.Name);
+        await CheckAuthenticatedApiAsync(provider, token, cancellationToken);
+        logger.LogInformation("Authentik provider {ProviderName} is reachable and API credentials are usable", provider.Name);
+    }
+
+    public Task ReleaseAsync(IdPProvider provider, CancellationToken cancellationToken)
+    {
+        var tokenInvalidated = authenticationService.InvalidateCachedToken(provider.Name);
+        logger.LogInformation("Invalidated cached Authentik token for provider {ProviderName}: {TokenInvalidated}", provider.Name, tokenInvalidated);
+        return Task.CompletedTask;
     }
 
     private async Task CheckAuthenticatedApiAsync(IdPProvider provider, string token, CancellationToken cancellationToken)
@@ -110,12 +98,9 @@ public class AuthentikProviderCheckService(
                 request.Url,
                 TimeoutSeconds,
                 provider.Name);
-            throw new IdPHttpException(
+            throw new IdPException(
                 $"Request was not able to be completed within {TimeoutSeconds} seconds",
-                HttpStatusCode.RequestTimeout,
-                "GET",
-                request.Url,
-                (int)HttpStatusCode.RequestTimeout,
+                IdPExceptionReason.IdpRequestFailed,
                 ex);
         }
         catch (FlurlHttpException ex) when (IsAuthorizationFailure(ex.StatusCode))
@@ -146,10 +131,10 @@ public class AuthentikProviderCheckService(
         }
     }
 
-    private static async Task<IdPHttpException> WrapRequestExceptionAsync(FlurlHttpException ex, string method, string url)
+    private static async Task<IdPException> WrapRequestExceptionAsync(FlurlHttpException ex, string method, string url)
     {
         var message = await ex.GetResponseStringAsync();
-        return new IdPHttpException(message, null, method, url, ex.StatusCode, ex);
+        return new IdPException(message, IdPExceptionReason.IdpRequestFailed, ex);
     }
 
     private static bool IsAuthorizationFailure(int? statusCode)

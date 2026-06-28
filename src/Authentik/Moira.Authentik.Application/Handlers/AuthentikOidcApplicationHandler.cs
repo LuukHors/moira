@@ -48,8 +48,9 @@ public partial class AuthentikOidcApplicationHandler(
         var now = DateTime.UtcNow;
         var provider = await CreateProviderAsync(command, cancellationToken);
 
+        var providerSettings = command.Entity.Spec.ProviderSettings;
         var application = await applicationRepository.CreateAsync(
-            applicationBuilder.Build(command.Entity, provider.pk, null),
+            applicationBuilder.Build(providerSettings, command.Entity, provider.pk, null),
             command.Entity.IdPProvider,
             cancellationToken);
 
@@ -100,7 +101,8 @@ public partial class AuthentikOidcApplicationHandler(
             command,
             cancellationToken);
 
-        var desiredApplication = applicationBuilder.Build(command.Entity, updatedProvider.pk ?? current.Application.provider, current.Application.pk);
+        var providerSettings = command.Entity.Spec.ProviderSettings;
+        var desiredApplication = applicationBuilder.Build(providerSettings, command.Entity, updatedProvider.pk ?? current.Application.provider, current.Application.pk);
         var updatedApplication = await ReconcileApplicationAsync(
             current.Application,
             desiredApplication,

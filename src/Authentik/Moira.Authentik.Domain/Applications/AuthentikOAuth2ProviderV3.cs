@@ -13,4 +13,7 @@ public record AuthentikOAuth2ProviderV3
     public IEnumerable<object> property_mappings { get; set; } = [];
     public IEnumerable<AuthentikRedirectUriV3> redirect_uris { get; set; } = [];
     public string logout_uri { get; set; } = string.Empty;
+    public string? access_code_validity { get; set; }
+    public string? access_token_validity { get; set; }
+    public string? refresh_token_validity { get; set; }
 }
