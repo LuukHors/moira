@@ -26,6 +26,7 @@ public static class DependencyInjectionExtensions
         services.AddScoped<IAuthentikHandler<IdPGroup, AuthentikGroupV3>, AuthentikGroupHandler>();
         services.AddScoped<IAuthentikOidcApplicationHandler, AuthentikOidcApplicationHandler>();
         services.AddScoped<IAuthentikHandler<IdPOidcApplication, AuthentikOidcApplicationV3>, AuthentikOidcApplicationHandler>();
+        services.AddScoped<IAuthentikProviderHandler, AuthentikProviderHandler>();
 
         return services;
     }
