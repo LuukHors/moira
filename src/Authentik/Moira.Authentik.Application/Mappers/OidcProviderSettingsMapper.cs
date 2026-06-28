@@ -7,15 +7,13 @@ public static class OidcProviderSettingsMapper
 {
     public static OidcAuthentikProviderSettings ToAuthentikSettings(this OidcProviderSettings providerSettings)
     {
-        string? Get(string key)
-        {
-            var value = providerSettings.Values.GetValueOrDefault(key);
-            return string.IsNullOrWhiteSpace(value) ? null : value;
-        }
+        var openInNewTab = bool.TryParse(providerSettings.Values.GetValueOrDefault("openInNewTab"), out var parsed) && parsed;
 
-        bool openInNewTab = bool.TryParse(providerSettings.Values.GetValueOrDefault("openInNewTab"), out var parsed) && parsed;
-
-        return new OidcAuthentikProviderSettings(Group: Get("group"))
+        return new OidcAuthentikProviderSettings(
+            AuthorizationFlowSlug: Get("authorizationFlowSlug"),
+            InvalidationFlowSlug: Get("invalidationFlowSlug"),
+            RedirectUriMatchingMode: Get("redirectUriMatchingMode"),
+            Group: Get("group"))
         {
             Metadata = new AuthentikApplicationMetadataSettings(
                 Description: Get("description"),
@@ -27,5 +25,11 @@ public static class OidcProviderSettingsMapper
                 AccessTokenValidity: Get("accessTokenValidity"),
                 RefreshTokenValidity: Get("refreshTokenValidity"))
         };
+
+        string? Get(string key)
+        {
+            var value = providerSettings.Values.GetValueOrDefault(key);
+            return string.IsNullOrWhiteSpace(value) ? null : value;
+        }
     }
 }
