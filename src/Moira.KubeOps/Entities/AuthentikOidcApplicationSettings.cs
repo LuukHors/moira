@@ -11,6 +11,23 @@ public class AuthentikOidcApplicationSettings : CustomKubernetesEntity<Authentik
         public string AuthorizationFlowSlug { get; set; } = "default-provider-authorization-explicit-consent";
         public string InvalidationFlowSlug { get; set; } = "default-provider-invalidation-flow";
         public string RedirectUriMatchingMode { get; set; } = "strict";
+        public string Group { get; set; } = string.Empty;
+        public TokenSettings TokenSettings { get; set; } = new();
+        public MetadataSettings MetadataSettings { get; set; } = new();
+    }
+
+    public class TokenSettings
+    {
+        public string AccessCodeValidity = string.Empty;
+        public string AccessTokenValidity = string.Empty;
+        public string RefreshTokenValidity = string.Empty;
+    }
+
+    public class MetadataSettings
+    {
+        public string Description { get; set; }
+        public string Icon { get; set; }
+        public string Publisher { get; set; }
     }
 
     public class SettingsStatus

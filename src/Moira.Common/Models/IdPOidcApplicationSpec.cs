@@ -15,7 +15,7 @@ public record IdPOidcApplicationSpec(
     string PolicyUri,
     string TermsOfServiceUri,
     IEnumerable<string> Contacts,
-    OidcProviderSettings? ProviderSettings,
+    OidcProviderSettings ProviderSettings,
     bool AutoDelete,
     int RotationDays,
     bool RotateClientSecret)

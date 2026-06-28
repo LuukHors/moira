@@ -80,7 +80,7 @@ public class OidcApplicationDependencyProvider(
                 entity.Spec.Oidc.PolicyUri,
                 entity.Spec.Oidc.TermsOfServiceUri,
                 entity.Spec.Oidc.Contacts,
-                providerSettings,
+                providerSettings ?? new Common.Models.OidcProviderSettings(),
                 entity.Spec.AutoDelete,
                 entity.Spec.RotationDays,
                 shouldRotate),

@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Moira.Authentik.Application.Mappers;
 using Moira.Authentik.Domain.Applications;
 using Moira.Common.Models;
 
@@ -6,8 +7,10 @@ namespace Moira.Authentik.Application.Builders;
 
 public partial class AuthentikApplicationBuilder : IAuthentikApplicationBuilder
 {
-    public AuthentikApplicationV3 Build(IdPOidcApplication application, int? providerId, string? applicationPk)
+    public AuthentikApplicationV3 Build(OidcProviderSettings providerSettings, IdPOidcApplication application, int? providerId, string? applicationPk)
     {
+        var settings = providerSettings.ToAuthentikSettings();
+        
         return new AuthentikApplicationV3(
             application.Spec.DisplayName,
             Slug(application.Name),
