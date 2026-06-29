@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 using Moira.Common.Exceptions;
 using Moira.Common.Models;
 using Moira.KubeOps.Entities;
-using Provider = Moira.KubeOps.Entities.Provider;
 
 namespace Moira.KubeOps.AdapterHandler.DependencyProvider;
 

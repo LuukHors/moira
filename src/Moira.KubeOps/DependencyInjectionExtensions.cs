@@ -1,5 +1,6 @@
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
+using Moira.Authentik.KubeOps.Entities;
 using Moira.Common.Models;
 using Moira.KubeOps.AdapterHandler;
 using Moira.KubeOps.AdapterHandler.DependencyProvider;

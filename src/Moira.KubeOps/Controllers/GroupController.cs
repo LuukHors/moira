@@ -1,5 +1,4 @@
 using KubeOps.Abstractions.Controller;
-using Microsoft.Extensions.Logging;
 using Moira.KubeOps.AdapterHandler;
 using Moira.KubeOps.Entities;
 

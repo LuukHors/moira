@@ -1,7 +1,7 @@
 using k8s.Models;
 using KubeOps.Abstractions.Entities;
 
-namespace Moira.KubeOps.Entities;
+namespace Moira.Authentik.KubeOps.Entities;
 
 [KubernetesEntity(Group = "moira.operator", ApiVersion = "v1alpha1", Kind = "AuthentikOidcApplicationSettings")]
 public class AuthentikOidcApplicationSettings : CustomKubernetesEntity<AuthentikOidcApplicationSettings.SettingsSpec, AuthentikOidcApplicationSettings.SettingsStatus>

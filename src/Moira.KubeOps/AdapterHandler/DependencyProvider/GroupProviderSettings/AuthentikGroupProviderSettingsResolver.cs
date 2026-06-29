@@ -1,4 +1,5 @@
 using KubeOps.KubernetesClient;
+using Moira.Authentik.KubeOps.Entities;
 using Moira.Common.Exceptions;
 using Moira.Common.Models;
 using Moira.KubeOps.Entities;

@@ -11,6 +11,7 @@
       <ProjectReference Include="..\Moira.Authentik.Domain\Moira.Authentik.Domain.csproj" />
       <ProjectReference Include="..\Moira.Authentik.Application\Moira.Authentik.Application.csproj" />
       <ProjectReference Include="..\Moira.Authentik.Infrastructure\Moira.Authentik.Infrastructure.csproj" />
+      <ProjectReference Include="..\Moira.Authentik.KubeOps\Moira.Authentik.KubeOps.csproj" />
     </ItemGroup>
 
 </Project>
