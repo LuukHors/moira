@@ -47,7 +47,19 @@ public class AuthentikOAuth2ProviderUpdateChecker : IUpdateChecker<AuthentikOAut
                 NormalizeRedirectUriType(uri.redirect_uri_type)))
             .ToHashSet();
 
-        return !desiredRedirectUris.SetEquals(currentRedirectUris);
+        if (!desiredRedirectUris.SetEquals(currentRedirectUris))
+            return true;
+
+        if (!string.Equals(NormalizeOptionalText(desired.access_code_validity), NormalizeOptionalText(current.access_code_validity), StringComparison.Ordinal))
+            return true;
+
+        if (!string.Equals(NormalizeOptionalText(desired.access_token_validity), NormalizeOptionalText(current.access_token_validity), StringComparison.Ordinal))
+            return true;
+
+        if (!string.Equals(NormalizeOptionalText(desired.refresh_token_validity), NormalizeOptionalText(current.refresh_token_validity), StringComparison.Ordinal))
+            return true;
+
+        return false;
     }
 
     private static ISet<string> ToAuthentikReferenceIdSet(IEnumerable<object>? values)

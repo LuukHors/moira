@@ -17,9 +17,9 @@ public partial class AuthentikApplicationBuilder : IAuthentikApplicationBuilder
             applicationPk,
             providerId,
             NormalizeLaunchUrl(application.Spec.LaunchUrl),
-            meta_icon_url: settings.Metadata.Icon,
-            meta_description: settings.Metadata.Description,
-            meta_publisher: settings.Metadata.Publisher,
+            meta_icon_url: settings.Metadata.Icon ?? string.Empty,
+            meta_description: settings.Metadata.Description ?? string.Empty,
+            meta_publisher: settings.Metadata.Publisher ?? string.Empty,
             open_in_new_tab: settings.Metadata.OpenInNewTab,
             group: NormalizeOptionalText(settings.Group));
     }

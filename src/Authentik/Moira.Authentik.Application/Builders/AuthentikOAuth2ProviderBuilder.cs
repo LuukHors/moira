@@ -1,16 +1,16 @@
 using Moira.Authentik.Domain.Applications;
+using Moira.Authentik.Domain.ProviderSettings;
 using Moira.Common.Exceptions;
 using Moira.Common.Models;
+using Moira.Common.Provider;
 
 namespace Moira.Authentik.Application.Builders;
 
 public class AuthentikOAuth2ProviderBuilder(
     IAuthentikFlowBuilder flowBuilder,
+    IDefaultConfig<OidcAuthentikProviderSettings> defaultConfig,
     IAuthentikScopeMappingBuilder scopeMappingBuilder) : IAuthentikOAuth2ProviderBuilder
 {
-    private const string DefaultAuthorizationFlowSlug = "default-provider-authorization-explicit-consent";
-    private const string DefaultInvalidationFlowSlug = "default-provider-invalidation-flow";
-    private const string DefaultRedirectUriMatchingMode = "strict";
     private static readonly IReadOnlyDictionary<string, object> DefaultAttributes = new Dictionary<string, object> { ["managed-by"] = "moira" };
 
     public async Task<AuthentikOAuth2ProviderV3> BuildAsync(
@@ -22,17 +22,18 @@ public class AuthentikOAuth2ProviderBuilder(
     {
         ValidateSupportedCoreProperties(application);
 
-        var authorizationFlowSlug = application.Spec.ProviderSettings?.GetValueOrDefault(
-            "authorizationFlowSlug",
-            DefaultAuthorizationFlowSlug) ?? DefaultAuthorizationFlowSlug;
-        var invalidationFlowSlug = application.Spec.ProviderSettings?.GetValueOrDefault(
-            "invalidationFlowSlug",
-            DefaultInvalidationFlowSlug) ?? DefaultInvalidationFlowSlug;
-        var redirectUriMatchingMode = application.Spec.ProviderSettings?.GetValueOrDefault(
-            "redirectUriMatchingMode",
-            DefaultRedirectUriMatchingMode) ?? DefaultRedirectUriMatchingMode;
+        var defaultSettings = defaultConfig.Receive();
 
-        static string? NonEmpty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
+        var authorizationFlowSlug = application.Spec.ProviderSettings.GetValueOrDefault(
+            "authorizationFlowSlug",
+            defaultSettings.AuthorizationFlowSlug!);
+        var invalidationFlowSlug = application.Spec.ProviderSettings.GetValueOrDefault(
+            "invalidationFlowSlug",
+            defaultSettings.InvalidationFlowSlug!);
+        var redirectUriMatchingMode = application.Spec.ProviderSettings.GetValueOrDefault(
+            "redirectUriMatchingMode",
+            defaultSettings.RedirectUriMatchingMode!);
+
         var accessCodeValidity = NonEmpty(application.Spec.ProviderSettings?.Values.GetValueOrDefault("accessCodeValidity"));
         var accessTokenValidity = NonEmpty(application.Spec.ProviderSettings?.Values.GetValueOrDefault("accessTokenValidity"));
         var refreshTokenValidity = NonEmpty(application.Spec.ProviderSettings?.Values.GetValueOrDefault("refreshTokenValidity"));
@@ -57,10 +58,12 @@ public class AuthentikOAuth2ProviderBuilder(
             logout_uri = application.Spec.LogoutUri,
             redirect_uris = application.Spec.RedirectUris
                 .Select(uri => new AuthentikRedirectUriV3(redirectUriMatchingMode, uri)),
-            access_code_validity = accessCodeValidity,
-            access_token_validity = accessTokenValidity,
-            refresh_token_validity = refreshTokenValidity
+            access_code_validity = accessCodeValidity ?? defaultSettings.TokenSettings.AccessCodeValidity,
+            access_token_validity = accessTokenValidity ?? defaultSettings.TokenSettings.AccessTokenValidity, 
+            refresh_token_validity = refreshTokenValidity ?? defaultSettings.TokenSettings.RefreshTokenValidity,
         };
+
+        static string? NonEmpty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
     }
 
     private static void ValidateSupportedCoreProperties(IdPOidcApplication application)
