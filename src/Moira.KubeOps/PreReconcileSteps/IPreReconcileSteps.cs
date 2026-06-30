@@ -1,5 +1,4 @@
 using KubeOps.Abstractions.Entities;
-using Moira.Common.Models;
 
 namespace Moira.KubeOps.PreReconcileSteps;
 

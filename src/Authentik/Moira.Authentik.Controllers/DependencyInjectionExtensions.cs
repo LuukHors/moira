@@ -1,10 +1,11 @@
+using KubeOps.Abstractions.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Moira.Authentik.Application;
 using Moira.Authentik.Controllers.Adapters;
 using Moira.Authentik.Infrastructure;
 using Moira.Authentik.KubeOps;
-using Moira.Common.Models;
-using Moira.Common.Provider;
+using Moira.Common.Abstractions;
+using Moira.Common.Abstractions.Models;
 
 namespace Moira.Authentik.Controllers;
 

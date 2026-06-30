@@ -24,6 +24,11 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Authentik\Moira.Authentik.Controllers\Moira.Authentik.Controllers.csproj" />
-      <ProjectReference Include="..\Moira.Common\Moira.Common.csproj" />
+      <ProjectReference Include="..\Moira.Common.Services\Moira.Common.Services.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="AdapterHandler\DependencyProvider\GroupProviderSettings\" />
+      <Folder Include="AdapterHandler\DependencyProvider\OidcProviderSettings\" />
     </ItemGroup>
 </Project>

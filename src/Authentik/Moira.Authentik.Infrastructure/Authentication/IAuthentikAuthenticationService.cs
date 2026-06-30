@@ -1,4 +1,4 @@
-using Moira.Common.Models;
+using Moira.Common.Abstractions.Models;
 
 namespace Moira.Authentik.Infrastructure.Authentication;
 

@@ -1,5 +1,5 @@
 using Moira.Authentik.Domain.Applications;
-using Moira.Common.Models;
+using Moira.Common.Abstractions.Models;
 
 namespace Moira.Authentik.Application.Builders;
 

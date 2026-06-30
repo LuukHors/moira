@@ -1,7 +1,7 @@
 using Moira.Authentik.Application.Ports;
-using Moira.Common.Commands;
-using Moira.Common.Exceptions;
-using Moira.Common.Models;
+using Moira.Common.Abstractions.Commands;
+using Moira.Common.Abstractions.Exceptions;
+using Moira.Common.Abstractions.Models;
 
 namespace Moira.Authentik.Application.Handlers;
 

@@ -1,11 +1,10 @@
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Moira.Authentik.KubeOps.Entities;
-using Moira.Common.Models;
+using Moira.Common.Abstractions;
+using Moira.Common.Abstractions.Models;
 using Moira.KubeOps.AdapterHandler;
 using Moira.KubeOps.AdapterHandler.DependencyProvider;
-using Moira.KubeOps.AdapterHandler.DependencyProvider.GroupProviderSettings;
-using Moira.KubeOps.AdapterHandler.DependencyProvider.OidcProviderSettings;
 using Moira.KubeOps.Entities;
 using Moira.KubeOps.Entities.Validators;
 using Moira.KubeOps.PreReconcileSteps;
@@ -33,10 +32,6 @@ public static class DependencyInjectionExtensions
         services.AddScoped<IDependencyProvider<Provider, IdPProvider>, ProviderDependencyProvider>();
         services.AddScoped<ISecretService, SecretService>();
         services.AddScoped<IOidcApplicationSecretService, OidcApplicationSecretService>();
-        services.AddScoped<IProviderSettingsResolver<OidcProviderSettings>, AuthentikOidcProviderSettingsResolver>();
-        services.AddScoped<IProviderSettingsService<OidcApplication, OidcProviderSettings>, OidcProviderSettingsService>();
-        services.AddScoped<IProviderSettingsResolver<GroupProviderSettings>, AuthentikGroupProviderSettingsResolver>();
-        services.AddScoped<IProviderSettingsService<Group, GroupProviderSettings>, GroupProviderSettingsService>();
         services.AddScoped<IValidatorExecutor<AuthentikOidcApplicationSettings>, ValidatorExecutor<AuthentikOidcApplicationSettings>>();
         services.AddScoped<IValidatorExecutor<AuthentikGroupSettings>, ValidatorExecutor<AuthentikGroupSettings>>();
         services.AddScoped<IValidatorExecutor<Group>, ValidatorExecutor<Group>>();

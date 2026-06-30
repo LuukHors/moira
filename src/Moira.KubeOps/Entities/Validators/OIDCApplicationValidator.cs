@@ -1,5 +1,5 @@
 using FluentValidation;
-using Moira.Common.Models;
+using Moira.Common.Abstractions.Models;
 
 namespace Moira.KubeOps.Entities.Validators;
 

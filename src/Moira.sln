@@ -2,7 +2,7 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Moira.KubeOps", "Moira.KubeOps\Moira.KubeOps.csproj", "{EDA92CD9-F16C-432F-A2C4-E6F2128D04CA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Moira.Common", "Moira.Common\Moira.Common.csproj", "{C4FCD129-A600-4F41-AA9E-A0FC905C2C20}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Moira.Common.Abstractions", "Common\Moira.Common.Abstractions\Moira.Common.Abstractions.csproj", "{C4FCD129-A600-4F41-AA9E-A0FC905C2C20}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Authentik", "Authentik", "{A1B2C3D4-0000-0000-0000-000000000000}"
 EndProject
@@ -15,6 +15,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Moira.Authentik.Controllers", "Authentik\Moira.Authentik.Controllers\Moira.Authentik.Controllers.csproj", "{E1B2C3D4-0000-0000-0000-000000000004}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Moira.Authentik.KubeOps", "Authentik\Moira.Authentik.KubeOps\Moira.Authentik.KubeOps.csproj", "{A9704467-25FB-411A-8734-753A76A459F8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{37376529-B75B-4143-8BBB-541A1D61F23F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Moira.Common.Services", "Moira.Common.Services\Moira.Common.Services.csproj", "{CA7F8083-16F9-4F45-B5E5-EADA57DC0B15}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -50,6 +54,10 @@ Global
 		{A9704467-25FB-411A-8734-753A76A459F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A9704467-25FB-411A-8734-753A76A459F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A9704467-25FB-411A-8734-753A76A459F8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CA7F8083-16F9-4F45-B5E5-EADA57DC0B15}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CA7F8083-16F9-4F45-B5E5-EADA57DC0B15}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CA7F8083-16F9-4F45-B5E5-EADA57DC0B15}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CA7F8083-16F9-4F45-B5E5-EADA57DC0B15}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{B1B2C3D4-0000-0000-0000-000000000001} = {A1B2C3D4-0000-0000-0000-000000000000}
@@ -57,5 +65,7 @@ Global
 		{D1B2C3D4-0000-0000-0000-000000000003} = {A1B2C3D4-0000-0000-0000-000000000000}
 		{E1B2C3D4-0000-0000-0000-000000000004} = {A1B2C3D4-0000-0000-0000-000000000000}
 		{A9704467-25FB-411A-8734-753A76A459F8} = {A1B2C3D4-0000-0000-0000-000000000000}
+		{C4FCD129-A600-4F41-AA9E-A0FC905C2C20} = {37376529-B75B-4143-8BBB-541A1D61F23F}
+		{CA7F8083-16F9-4F45-B5E5-EADA57DC0B15} = {37376529-B75B-4143-8BBB-541A1D61F23F}
 	EndGlobalSection
 EndGlobal

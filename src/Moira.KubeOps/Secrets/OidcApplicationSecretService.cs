@@ -1,6 +1,6 @@
 using k8s.Models;
 using Microsoft.Extensions.Logging;
-using Moira.Common.Models;
+using Moira.Common.Abstractions.Models;
 using Moira.KubeOps.Entities;
 using Moira.KubeOps.Secrets.Models;
 

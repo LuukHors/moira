@@ -2,10 +2,9 @@ using Microsoft.Extensions.Logging;
 using Moira.Authentik.Application.Mappers;
 using Moira.Authentik.Application.Ports;
 using Moira.Authentik.Domain.Groups;
-using Moira.Common.Commands;
-using Moira.Common.Exceptions;
-using Moira.Common.Models;
-using Moira.Authentik.Domain.ProviderSettings;
+using Moira.Common.Abstractions.Commands;
+using Moira.Common.Abstractions.Exceptions;
+using Moira.Common.Abstractions.Models;
 
 namespace Moira.Authentik.Application.Builders;
 
@@ -23,15 +22,16 @@ public class AuthentikGroupBuilder(
         return command.Entity.ToAuthentikGroup(parentIds, attributes);
     }
 
-    private static IReadOnlyDictionary<string, object> MergeAttributes(GroupProviderSettings? providerSettings)
+    private static IReadOnlyDictionary<string, object> MergeAttributes(IdpProviderSpecificSettings? providerSettings)
     {
         if (providerSettings is null)
             return DefaultAttributes;
 
-        var settings = providerSettings.ToAuthentikSettings();
-        return DefaultAttributes
-            .Concat(settings.Attributes.Values.Select(kv => new KeyValuePair<string, object>(kv.Key, kv.Value)))
-            .ToDictionary(kv => kv.Key, kv => kv.Value);
+        return DefaultAttributes;
+        // var settings = providerSettings.ToAuthentikOidcApplicationSettings();
+        // return DefaultAttributes
+        //     .Concat(settings.Attributes.Values.Select(kv => new KeyValuePair<string, object>(kv.Key, kv.Value)))
+        //     .ToDictionary(kv => kv.Key, kv => kv.Value);
     }
 
     private async Task<IEnumerable<string>> ResolveParentIdsAsync(IdPCommand<IdPGroup> command, CancellationToken cancellationToken)

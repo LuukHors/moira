@@ -6,8 +6,9 @@ using Moira.Authentik.Application.UpdateCheckers;
 using Moira.Authentik.Domain.Applications;
 using Moira.Authentik.Domain.Groups;
 using Moira.Authentik.Domain.ProviderSettings;
-using Moira.Common.Models;
-using Moira.Common.Provider;
+using Moira.Common;
+using Moira.Common.Abstractions;
+using Moira.Common.Abstractions.Models;
 
 namespace Moira.Authentik.Application;
 

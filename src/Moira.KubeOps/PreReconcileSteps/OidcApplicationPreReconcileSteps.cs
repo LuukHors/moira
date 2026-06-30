@@ -1,6 +1,6 @@
 using KubeOps.Abstractions.Finalizer;
 using Microsoft.Extensions.Logging;
-using Moira.Common.Exceptions;
+using Moira.Common.Abstractions.Exceptions;
 using Moira.KubeOps.Controllers;
 using Moira.KubeOps.Entities;
 using Moira.KubeOps.PreReconcileSteps.ValidatorWebhooks.Executor;

@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Moira.Authentik.Controllers;
-using Moira.Common;
+using Moira.Common.Services;
 using Moira.KubeOps;
 using Serilog;
 using Serilog.Events;
@@ -26,7 +26,7 @@ builder.Services
     .AddMoiraCommon()
     .AddMoiraAuthentikProvider()
     .AddMoiraKubeOps()
-    .AddKubernetesOperator()
+    .AddKubernetesOperator(s => s.Name = "Moira")
     .RegisterComponents();
 
 builder.Logging.AddSerilog();

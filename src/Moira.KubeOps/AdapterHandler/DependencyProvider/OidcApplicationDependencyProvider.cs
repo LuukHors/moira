@@ -2,8 +2,9 @@ using System.Text;
 using k8s.Models;
 using KubeOps.KubernetesClient;
 using Microsoft.Extensions.Logging;
-using Moira.Common.Exceptions;
-using Moira.Common.Models;
+using Moira.Common.Abstractions;
+using Moira.Common.Abstractions.Exceptions;
+using Moira.Common.Abstractions.Models;
 using Moira.KubeOps.Entities;
 using Moira.KubeOps.Secrets;
 using Moira.KubeOps.Secrets.Models;
@@ -14,7 +15,7 @@ namespace Moira.KubeOps.AdapterHandler.DependencyProvider;
 public class OidcApplicationDependencyProvider(
     IKubernetesClient client,
     IDependencyProvider<Provider, IdPProvider> providerDependencyProvider,
-    IProviderSettingsService<OidcApplication, Moira.Common.Models.OidcProviderSettings> providerSettingsService,
+    IProviderSettingsService providerSettingsService,
     ILogger<OidcApplicationDependencyProvider> logger) : IDependencyProvider<OidcApplication, IdPOidcApplication>
 {
     public async Task<IdPOidcApplication> ResolveAsync(OidcApplication entity, CancellationToken cancellationToken)
@@ -39,7 +40,7 @@ public class OidcApplicationDependencyProvider(
         }
 
         var idPProvider = await providerDependencyProvider.ResolveAsync(provider, cancellationToken);
-        var providerSettings = await providerSettingsService.ResolveAsync(entity, idPProvider, cancellationToken);
+        var providerSettings = await providerSettingsService.ResolveAsync(entity.Spec.ProviderSettingsRef, cancellationToken);
         logger.LogDebug(
             "Resolved provider {ProviderNamespace}/{ProviderName} for OIDC application",
             entity.Spec.ProviderRef.Namespace,
@@ -79,7 +80,7 @@ public class OidcApplicationDependencyProvider(
                 entity.Spec.Oidc.PolicyUri,
                 entity.Spec.Oidc.TermsOfServiceUri,
                 entity.Spec.Oidc.Contacts,
-                providerSettings ?? new Moira.Common.Models.OidcProviderSettings(),
+                providerSettings,
                 entity.Spec.AutoDelete,
                 entity.Spec.RotationDays,
                 shouldRotate),

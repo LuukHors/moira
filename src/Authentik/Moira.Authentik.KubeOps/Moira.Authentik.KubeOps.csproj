@@ -7,14 +7,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\Moira.Common\Moira.Common.csproj" />
+        <ProjectReference Include="..\..\Common\Moira.Common.Abstractions\Moira.Common.Abstractions.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="KubeOps.Abstractions" Version="9.2.0" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Entities\" />
+      <PackageReference Include="KubeOps.Operator" Version="9.2.0" />
     </ItemGroup>
 </Project>
