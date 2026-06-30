@@ -13,28 +13,21 @@ public class AuthentikGroupProviderSettingsResolver(IKubernetesClient client) : 
 
     public bool CanResolve(ResourceRef settingsRef)
     {
-        return settingsRef.Kind.Equals(SupportedKind, StringComparison.OrdinalIgnoreCase);
+        return settingsRef.Kind.Equals(SupportedKind, StringComparison.Ordinal)
+            && settingsRef.ApiVersion.Equals(SupportedApiVersion, StringComparison.Ordinal);
     }
 
     public async Task<IdpProviderSpecificSettings?> ResolveAsync(ResourceRef settingsRef, CancellationToken cancellationToken)
     {
-        if (!settingsRef.ApiVersion.Equals(SupportedApiVersion, StringComparison.OrdinalIgnoreCase))
-        {
-            throw new ProviderSettingsException(
-                $"Unsupported providerSettingsRef apiVersion \"{settingsRef.ApiVersion}\" for settings kind \"{settingsRef.Kind}\".");
-        }
-
-        var settingsNamespace = settingsRef.Namespace;
-
         var settings = await client.GetAsync<AuthentikGroupSettings>(
             settingsRef.Name,
-            settingsNamespace,
+            settingsRef.Namespace,
             cancellationToken);
 
         if (settings is null)
         {
             throw new ProviderSettingsException(
-                $"Unable to get AuthentikGroupSettings with name \"{settingsRef.Name}\" in namespace \"{settingsNamespace}\".");
+                $"Unable to get AuthentikGroupSettings with name \"{settingsRef.Name}\" in namespace \"{settingsRef.Namespace}\".");
         }
 
         return new IdpProviderSpecificSettings();
