@@ -27,11 +27,9 @@ public class AuthentikGroupBuilder(
         if (providerSettings is null)
             return DefaultAttributes;
 
-        return DefaultAttributes;
-        // var settings = providerSettings.ToAuthentikOidcApplicationSettings();
-        // return DefaultAttributes
-        //     .Concat(settings.Attributes.Values.Select(kv => new KeyValuePair<string, object>(kv.Key, kv.Value)))
-        //     .ToDictionary(kv => kv.Key, kv => kv.Value);
+        return DefaultAttributes
+            .Concat(providerSettings.Values.Select(kv => new KeyValuePair<string, object>(kv.Key, kv.Value)))
+            .ToDictionary(kv => kv.Key, kv => kv.Value);
     }
 
     private async Task<IEnumerable<string>> ResolveParentIdsAsync(IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
