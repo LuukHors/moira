@@ -1,6 +1,6 @@
 using KubeOps.Abstractions.Entities;
-using Moira.Common.Exceptions;
-using Moira.Common.Models;
+using Moira.Common.Abstractions.Exceptions;
+using Moira.Common.Abstractions.Models;
 
 namespace Moira.KubeOps.ResultHandler;
 

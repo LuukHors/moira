@@ -1,17 +1,17 @@
 using k8s.Models;
 using KubeOps.KubernetesClient;
 using Microsoft.Extensions.Logging;
-using Moira.Common.Exceptions;
-using Moira.Common.Models;
+using Moira.Common.Abstractions;
+using Moira.Common.Abstractions.Exceptions;
+using Moira.Common.Abstractions.Models;
 using Moira.KubeOps.Entities;
-using Provider = Moira.KubeOps.Entities.Provider;
 
 namespace Moira.KubeOps.AdapterHandler.DependencyProvider;
 
 public class GroupDependencyProvider(
     IKubernetesClient client,
     IDependencyProvider<Provider, IdPProvider> providerDependencyProvider,
-    IProviderSettingsService<Group, Common.Models.GroupProviderSettings> providerSettingsService,
+    IProviderSettingsService providerSettingsService,
     ILogger<GroupDependencyProvider> logger) : IDependencyProvider<Group, IdPGroup>
 {
     public async Task<IdPGroup> ResolveAsync(Group entity, CancellationToken cancellationToken)
@@ -29,7 +29,7 @@ public class GroupDependencyProvider(
         }
 
         var idPProvider = await providerDependencyProvider.ResolveAsync(provider, cancellationToken);
-        var providerSettings = await providerSettingsService.ResolveAsync(entity, idPProvider, cancellationToken);
+        var providerSettings = await providerSettingsService.ResolveAsync(entity.Spec.ProviderSettingsRef, cancellationToken);
         logger.LogDebug("Resolved provider {ProviderNamespace}/{ProviderName} for group", entity.Spec.ProviderRef.Namespace, entity.Spec.ProviderRef.Name);
 
         return new IdPGroup(

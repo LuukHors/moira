@@ -3,8 +3,8 @@ using Flurl.Http;
 using Microsoft.Extensions.Logging;
 using Moira.Authentik.Application.Ports;
 using Moira.Authentik.Infrastructure.Authentication;
-using Moira.Common.Exceptions;
-using Moira.Common.Models;
+using Moira.Common.Abstractions.Exceptions;
+using Moira.Common.Abstractions.Models;
 
 namespace Moira.Authentik.Infrastructure.ProviderCheck;
 

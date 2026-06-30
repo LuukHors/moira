@@ -1,8 +1,9 @@
 using Moira.Authentik.Domain.Applications;
 using Moira.Authentik.Domain.ProviderSettings;
-using Moira.Common.Exceptions;
-using Moira.Common.Models;
-using Moira.Common.Provider;
+using Moira.Common;
+using Moira.Common.Abstractions;
+using Moira.Common.Abstractions.Exceptions;
+using Moira.Common.Abstractions.Models;
 
 namespace Moira.Authentik.Application.Builders;
 

@@ -1,4 +1,4 @@
-using Moira.Common.Exceptions;
+using Moira.Common.Abstractions.Exceptions;
 using Moira.KubeOps.Status;
 
 namespace Moira.KubeOps.Mappers;

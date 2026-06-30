@@ -3,9 +3,9 @@ using Microsoft.Extensions.Logging;
 using Moira.Authentik.Application.Builders;
 using Moira.Authentik.Application.Ports;
 using Moira.Authentik.Domain.Applications;
-using Moira.Common.Commands;
-using Moira.Common.Models;
-using Moira.Common.Provider;
+using Moira.Common.Abstractions;
+using Moira.Common.Abstractions.Commands;
+using Moira.Common.Abstractions.Models;
 
 namespace Moira.Authentik.Application.Handlers;
 

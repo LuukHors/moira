@@ -1,5 +1,5 @@
 using KubeOps.Abstractions.Entities;
-using Moira.Common.Models;
+using Moira.Common.Abstractions.Models;
 
 namespace Moira.KubeOps.AdapterHandler.DependencyProvider;
 

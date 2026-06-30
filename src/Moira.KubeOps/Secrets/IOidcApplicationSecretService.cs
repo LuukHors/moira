@@ -1,4 +1,4 @@
-using Moira.Common.Models;
+using Moira.Common.Abstractions.Models;
 using Moira.KubeOps.Entities;
 
 namespace Moira.KubeOps.Secrets;

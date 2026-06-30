@@ -1,8 +1,8 @@
 using KubeOps.Abstractions.Queue;
 using KubeOps.KubernetesClient;
 using Microsoft.Extensions.Logging;
-using Moira.Common.Exceptions;
-using Moira.Common.Models;
+using Moira.Common.Abstractions.Exceptions;
+using Moira.Common.Abstractions.Models;
 using Moira.KubeOps.Entities;
 using Moira.KubeOps.Mappers;
 using Moira.KubeOps.Status;

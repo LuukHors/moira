@@ -1,5 +1,5 @@
 using Moira.Authentik.Domain.ProviderSettings;
-using Moira.Common.Models;
+using Moira.Common.Abstractions.Models;
 
 namespace Moira.Authentik.Application.Mappers;
 

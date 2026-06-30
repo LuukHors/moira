@@ -2,8 +2,8 @@ using k8s.Models;
 using KubeOps.Abstractions.Queue;
 using KubeOps.KubernetesClient;
 using Microsoft.Extensions.Logging;
-using Moira.Common.Exceptions;
-using Moira.Common.Models;
+using Moira.Common.Abstractions.Exceptions;
+using Moira.Common.Abstractions.Models;
 using Moira.KubeOps.Entities;
 using Moira.KubeOps.Mappers;
 using Moira.KubeOps.Status;
@@ -69,10 +69,7 @@ public class GroupResultHandler(
         logger.LogDebug("Requeued group after failed operation with delay {RequeueDelaySeconds}", 20);
     }
 
-    public async Task HandleDeleteAsync(Group entity, IdPGroup idpEntity, CancellationToken cancellationToken)
-    {
-        
-    }
+    public Task HandleDeleteAsync(Group entity, IdPGroup idpEntity, CancellationToken cancellationToken) => Task.CompletedTask;
 
     private static bool IsDeleting(Group entity)
     {

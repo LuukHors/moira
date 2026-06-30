@@ -1,8 +1,8 @@
 using KubeOps.Abstractions.Queue;
 using KubeOps.KubernetesClient;
 using Microsoft.Extensions.Logging;
-using Moira.Common.Exceptions;
-using Moira.Common.Models;
+using Moira.Common.Abstractions.Exceptions;
+using Moira.Common.Abstractions.Models;
 using Moira.KubeOps.Entities;
 using Moira.KubeOps.Mappers;
 using Moira.KubeOps.Secrets;
@@ -51,14 +51,6 @@ public class OidcApplicationResultHandler(
             allSecretsSynced
                 ? "All target secrets were synced."
                 : "One or more target secrets failed to sync.");
-        entity.UpsertCondition(
-            entity.Status.Conditions,
-            ConditionTypes.RotationReady,
-            ConditionStatus.True,
-            idpEntity.Spec.RotateClientSecret ? ConditionReasons.RotationSucceeded : ConditionReasons.RotationNotDue,
-            idpEntity.Spec.RotateClientSecret
-                ? "OIDC client secret was rotated."
-                : "OIDC client secret rotation is not due.");
 
         await client.UpdateStatusAsync(entity, cancellationToken);
         logger.LogDebug("Updated OIDC application status after reconcile with application id {ApplicationId}", idpEntity.Status.ApplicationId);
