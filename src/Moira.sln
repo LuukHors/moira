@@ -18,7 +18,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Moira.Authentik.KubeOps", "
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{37376529-B75B-4143-8BBB-541A1D61F23F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Moira.Common.Services", "Moira.Common.Services\Moira.Common.Services.csproj", "{CA7F8083-16F9-4F45-B5E5-EADA57DC0B15}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Moira.Common.Services", "Common\Moira.Common.Services\Moira.Common.Services.csproj", "{CA7F8083-16F9-4F45-B5E5-EADA57DC0B15}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

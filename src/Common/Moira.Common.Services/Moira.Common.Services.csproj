@@ -12,7 +12,7 @@
     </ItemGroup>
     
     <ItemGroup>
-      <ProjectReference Include="..\Common\Moira.Common.Abstractions\Moira.Common.Abstractions.csproj" />
+      <ProjectReference Include="..\Moira.Common.Abstractions\Moira.Common.Abstractions.csproj" />
     </ItemGroup>
     
     <ItemGroup>

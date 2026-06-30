@@ -24,7 +24,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Authentik\Moira.Authentik.Controllers\Moira.Authentik.Controllers.csproj" />
-      <ProjectReference Include="..\Moira.Common.Services\Moira.Common.Services.csproj" />
+      <ProjectReference Include="..\Common\Moira.Common.Services\Moira.Common.Services.csproj" />
     </ItemGroup>
 
     <ItemGroup>
