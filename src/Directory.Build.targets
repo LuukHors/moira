@@ -1,0 +1,21 @@
+<Project>
+
+  <!--
+    KubeOps' build-time manifest generation (KubeOps.Operator.targets) runs
+    `kubeops generate operator <csproj>` against the executable project only.
+    That scans a single assembly, so CRDs declared in provider libraries
+    (e.g. Moira.Authentik.KubeOps) are missed. Point generation at the solution
+    instead: `kubeops generate` loads every project assembly for a .sln and
+    discovers all [KubernetesEntity] types across the provider modules.
+  -->
+  <Target Name="GenerateKustomizationConfig"
+          DependsOnTargets="BaseConfig"
+          Condition="'$(OutputType)' == 'Exe'">
+    <PropertyGroup>
+      <MoiraSolutionPath>$(MSBuildThisFileDirectory)Moira.sln</MoiraSolutionPath>
+    </PropertyGroup>
+    <Message Text="Generating KubeOps operator config from $(MoiraSolutionPath)" Importance="high" />
+    <Exec Command="$(KubeOpsCli) generate operator --out $(KubeOpsConfigOut) $(OperatorName) $(MoiraSolutionPath)" />
+  </Target>
+
+</Project>
