@@ -1,0 +1,22 @@
+﻿using FluentValidation;
+
+namespace Moira.Authentik.KubeOps.Entities.Validators;
+
+internal class GroupValidator : AbstractValidator<AuthentikGroup>
+{
+    public GroupValidator()
+    {
+        RuleFor(g => g.Spec.ProviderRef)
+            .NotNull()
+            .WithMessage("The \"providerRef\" property should be set");
+        RuleFor(g => g.Spec.ProviderRef.Name)
+            .NotNull()
+            .NotEmpty()
+            .WithMessage("The \"providerRef.name\" property should be set");
+        RuleFor(g => g.Spec.DisplayName)
+            .NotEmpty()
+            .WithMessage("The group's displayName should not be empty");
+        RuleFor(g => g.Spec.ProviderRef.Name).NotEmpty();
+        RuleFor(g => g.Spec.ProviderRef.Namespace).NotEmpty();
+    }
+}

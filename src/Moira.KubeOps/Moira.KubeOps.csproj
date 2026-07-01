@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
@@ -8,14 +8,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="FluentValidation" Version="12.0.0" />
-      <PackageReference Include="KubeOps.Generator" Version="9.2.0">
-        <PrivateAssets>all</PrivateAssets>
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      </PackageReference>
       <PackageReference Include="KubeOps.Operator" Version="9.2.0" />
       <PackageReference Include="KubeOps.Operator.Web" Version="9.2.0" />
-      <PackageReference Include="Scrutor" Version="6.1.0" />
       <PackageReference Include="Serilog" Version="4.2.0" />
       <PackageReference Include="Serilog.Extensions.Hosting" Version="9.0.0" />
       <PackageReference Include="Serilog.Formatting.Compact" Version="3.0.0" />
@@ -23,12 +17,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Authentik\Moira.Authentik.Controllers\Moira.Authentik.Controllers.csproj" />
+      <ProjectReference Include="..\Authentik\Moira.Authentik.KubeOps\Moira.Authentik.KubeOps.csproj" />
       <ProjectReference Include="..\Common\Moira.Common.Services\Moira.Common.Services.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="AdapterHandler\DependencyProvider\GroupProviderSettings\" />
-      <Folder Include="AdapterHandler\DependencyProvider\OidcProviderSettings\" />
     </ItemGroup>
 </Project>

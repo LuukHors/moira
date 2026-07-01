@@ -1,10 +1,10 @@
+using Moira.Authentik.Application.Models;
 using Microsoft.Extensions.Logging;
 using Moira.Authentik.Application.Builders;
 using Moira.Authentik.Application.Ports;
 using Moira.Authentik.Domain.Groups;
 using Moira.Common.Abstractions;
 using Moira.Common.Abstractions.Commands;
-using Moira.Common.Abstractions.Mappers;
 using Moira.Common.Abstractions.Models;
 
 namespace Moira.Authentik.Application.Handlers;
@@ -13,11 +13,11 @@ public class AuthentikGroupHandler(
     IAuthentikRepository<AuthentikGroupV3, AuthentikGroupV3, string> groupRepository,
     IAuthentikGroupBuilder groupBuilder,
     IUpdateChecker<AuthentikGroupV3, AuthentikGroupV3> updateChecker,
-    ILogger<AuthentikGroupHandler> logger) : IAuthentikHandler<IdPGroup, AuthentikGroupV3>
+    ILogger<AuthentikGroupHandler> logger) : IAuthentikHandler<AuthentikGroupModel, AuthentikGroupV3>
 {
     private static readonly IReadOnlyDictionary<string, object> DefaultAttributes = new Dictionary<string, object> { ["managed-by"] = "moira" };
 
-    public async Task<AuthentikGroupV3?> GetAsync(IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
+    public async Task<AuthentikGroupV3?> GetAsync(IdPCommand<AuthentikGroupModel> command, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(command.Entity.Status.GroupId))
         {
@@ -29,7 +29,7 @@ public class AuthentikGroupHandler(
         return await groupRepository.GetByIdAsync(command.Entity.Status.GroupId, command.Entity.IdPProvider, DefaultAttributes, cancellationToken);
     }
 
-    public async Task<IdPCommandResult<IdPGroup>> CreateAsync(IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
+    public async Task<IdPCommandResult<AuthentikGroupModel>> CreateAsync(IdPCommand<AuthentikGroupModel> command, CancellationToken cancellationToken)
     {
         var group = await groupBuilder.BuildAsync(command, cancellationToken);
         logger.LogInformation("Group does not exist, creating group {DisplayName} with {ParentGroupCount} parent groups", group.name, group.parents.Count());
@@ -37,14 +37,14 @@ public class AuthentikGroupHandler(
         var result = await groupRepository.CreateAsync(group, command.Entity.IdPProvider, cancellationToken);
         logger.LogInformation("Created Authentik group {DisplayName} with group id {GroupId}", result.name, result.pk);
 
-        return new IdPCommandResult<IdPGroup>(command.Id, command.Entity.CopyWithNewStatus(new IdPGroupStatus(
+        return new IdPCommandResult<AuthentikGroupModel>(command.Id, command.Entity.CopyWithNewStatus(new AuthentikGroupStatus(
             result.pk!,
             result.name,
             result.parents
         )));
     }
 
-    public async Task<IdPCommandResult<IdPGroup>> UpdateAsync(AuthentikGroupV3 current, IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
+    public async Task<IdPCommandResult<AuthentikGroupModel>> UpdateAsync(AuthentikGroupV3 current, IdPCommand<AuthentikGroupModel> command, CancellationToken cancellationToken)
     {
         var group = await groupBuilder.BuildAsync(command, cancellationToken);
 
@@ -52,7 +52,7 @@ public class AuthentikGroupHandler(
         {
             logger.LogInformation("Group {DisplayName} is already up to date with group id {GroupId}", current.name, current.pk);
 
-            return new IdPCommandResult<IdPGroup>(command.Id, command.Entity.CopyWithNewStatus(new IdPGroupStatus(
+            return new IdPCommandResult<AuthentikGroupModel>(command.Id, command.Entity.CopyWithNewStatus(new AuthentikGroupStatus(
                 current.pk ?? string.Empty,
                 current.name,
                 current.parents
@@ -64,14 +64,14 @@ public class AuthentikGroupHandler(
         var result = await groupRepository.UpdateAsync(current.pk!, group, command.Entity.IdPProvider, cancellationToken);
         logger.LogInformation("Updated Authentik group {DisplayName} with group id {GroupId}", result.name, result.pk);
 
-        return new IdPCommandResult<IdPGroup>(command.Id, command.Entity.CopyWithNewStatus(new IdPGroupStatus(
+        return new IdPCommandResult<AuthentikGroupModel>(command.Id, command.Entity.CopyWithNewStatus(new AuthentikGroupStatus(
             result.pk!,
             result.name,
             result.parents
         )));
     }
 
-    public async Task<bool> DeleteAsync(IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
+    public async Task<bool> DeleteAsync(IdPCommand<AuthentikGroupModel> command, CancellationToken cancellationToken)
     {
         if (!command.Entity.Spec.AutoDelete)
         {

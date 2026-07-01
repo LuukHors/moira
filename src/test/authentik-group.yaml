@@ -1,5 +1,5 @@
 apiVersion: moira.operator/v1alpha1
-kind: Group
+kind: AuthentikGroup
 metadata:
   name: moira-test2
   namespace: default
@@ -10,7 +10,7 @@ spec:
     name: authentik-provider
 ---
 apiVersion: moira.operator/v1alpha1
-kind: Group
+kind: AuthentikGroup
 metadata:
   name: moira-test1
   namespace: default
@@ -20,7 +20,7 @@ spec:
     name: authentik-provider
 ---
 apiVersion: moira.operator/v1alpha1
-kind: Group
+kind: AuthentikGroup
 metadata:
   name: moira-test3
   namespace: default

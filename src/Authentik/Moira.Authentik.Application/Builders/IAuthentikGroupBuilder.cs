@@ -1,3 +1,4 @@
+using Moira.Authentik.Application.Models;
 using Moira.Authentik.Domain.Groups;
 using Moira.Common.Abstractions.Commands;
 using Moira.Common.Abstractions.Models;
@@ -6,5 +7,5 @@ namespace Moira.Authentik.Application.Builders;
 
 public interface IAuthentikGroupBuilder
 {
-    Task<AuthentikGroupV3> BuildAsync(IdPCommand<IdPGroup> command, CancellationToken cancellationToken);
+    Task<AuthentikGroupV3> BuildAsync(IdPCommand<AuthentikGroupModel> command, CancellationToken cancellationToken);
 }

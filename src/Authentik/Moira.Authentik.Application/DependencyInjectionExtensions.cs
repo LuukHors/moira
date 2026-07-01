@@ -1,3 +1,4 @@
+using Moira.Authentik.Application.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Moira.Authentik.Application.Builders;
 using Moira.Authentik.Application.DefaultConfig;
@@ -26,9 +27,9 @@ public static class DependencyInjectionExtensions
         services.AddScoped<IAuthentikApplicationBuilder, AuthentikApplicationBuilder>();
         services.AddScoped<IAuthentikGroupBuilder, AuthentikGroupBuilder>();
 
-        services.AddScoped<IAuthentikHandler<IdPGroup, AuthentikGroupV3>, AuthentikGroupHandler>();
+        services.AddScoped<IAuthentikHandler<AuthentikGroupModel, AuthentikGroupV3>, AuthentikGroupHandler>();
         services.AddScoped<IAuthentikOidcApplicationHandler, AuthentikOidcApplicationHandler>();
-        services.AddScoped<IAuthentikHandler<IdPOidcApplication, AuthentikOidcApplicationV3>, AuthentikOidcApplicationHandler>();
+        services.AddScoped<IAuthentikHandler<AuthentikOidcApplicationModel, AuthentikOidcApplicationV3>, AuthentikOidcApplicationHandler>();
         services.AddScoped<IAuthentikProviderHandler, AuthentikProviderHandler>();
         services.AddScoped<IDefaultConfig<OidcAuthentikProviderSettings>, AuthentikOidcApplicationSettingsDefault>();
 
