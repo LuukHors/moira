@@ -1,15 +1,14 @@
 using System.Text.RegularExpressions;
-using Moira.Authentik.Application.Mappers;
+using Moira.Authentik.Application.Models;
 using Moira.Authentik.Domain.Applications;
-using Moira.Common.Abstractions.Models;
 
 namespace Moira.Authentik.Application.Builders;
 
 public partial class AuthentikApplicationBuilder : IAuthentikApplicationBuilder
 {
-    public AuthentikApplicationV3 Build(IdpProviderSpecificSettings providerSettings, IdPOidcApplication application, int? providerId, string? applicationPk)
+    public AuthentikApplicationV3 Build(AuthentikOidcApplicationModel application, int? providerId, string? applicationPk)
     {
-        var settings = providerSettings.ToAuthentikOidcApplicationSettings();
+        var settings = application.Spec.Authentik;
 
         return new AuthentikApplicationV3(
             application.Spec.DisplayName,

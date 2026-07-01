@@ -1,9 +1,8 @@
-﻿using KubeOps.Operator;
+using KubeOps.Operator;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Moira.Authentik.Controllers;
+using Moira.Authentik.KubeOps;
 using Moira.Common.Services;
-using Moira.KubeOps;
 using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Compact;
@@ -16,7 +15,7 @@ Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Error)
     .MinimumLevel.Override("System.Net.Http", LogEventLevel.Error)
-    .MinimumLevel.Override("KubeOps.Operator", LogEventLevel.Error)    
+    .MinimumLevel.Override("KubeOps.Operator", LogEventLevel.Error)
     .MinimumLevel.Override("Moira", LogEventLevel.Information)
     .Enrich.FromLogContext()
     .WriteTo.Console(new RenderedCompactJsonFormatter())
@@ -24,8 +23,7 @@ Log.Logger = new LoggerConfiguration()
 
 builder.Services
     .AddMoiraCommon()
-    .AddMoiraAuthentikProvider()
-    .AddMoiraKubeOps()
+    .AddMoiraAuthentikKubeOps()
     .AddKubernetesOperator(s => s.Name = "Moira")
     .RegisterComponents();
 

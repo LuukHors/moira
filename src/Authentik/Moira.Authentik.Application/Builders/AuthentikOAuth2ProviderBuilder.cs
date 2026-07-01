@@ -1,3 +1,4 @@
+using Moira.Authentik.Application.Models;
 using Moira.Authentik.Domain.Applications;
 using Moira.Authentik.Domain.ProviderSettings;
 using Moira.Common;
@@ -15,7 +16,7 @@ public class AuthentikOAuth2ProviderBuilder(
     private static readonly IReadOnlyDictionary<string, object> DefaultAttributes = new Dictionary<string, object> { ["managed-by"] = "moira" };
 
     public async Task<AuthentikOAuth2ProviderV3> BuildAsync(
-        IdPOidcApplication application,
+        AuthentikOidcApplicationModel application,
         string clientId,
         string clientSecret,
         int? providerId,
@@ -24,20 +25,15 @@ public class AuthentikOAuth2ProviderBuilder(
         ValidateSupportedCoreProperties(application);
 
         var defaultSettings = defaultConfig.Receive();
+        var settings = application.Spec.Authentik;
 
-        var authorizationFlowSlug = application.Spec.ProviderSettings.GetValueOrDefault(
-            "authorizationFlowSlug",
-            defaultSettings.AuthorizationFlowSlug!);
-        var invalidationFlowSlug = application.Spec.ProviderSettings.GetValueOrDefault(
-            "invalidationFlowSlug",
-            defaultSettings.InvalidationFlowSlug!);
-        var redirectUriMatchingMode = application.Spec.ProviderSettings.GetValueOrDefault(
-            "redirectUriMatchingMode",
-            defaultSettings.RedirectUriMatchingMode!);
+        var authorizationFlowSlug = NonEmpty(settings.AuthorizationFlowSlug) ?? defaultSettings.AuthorizationFlowSlug!;
+        var invalidationFlowSlug = NonEmpty(settings.InvalidationFlowSlug) ?? defaultSettings.InvalidationFlowSlug!;
+        var redirectUriMatchingMode = NonEmpty(settings.RedirectUriMatchingMode) ?? defaultSettings.RedirectUriMatchingMode!;
 
-        var accessCodeValidity = NonEmpty(application.Spec.ProviderSettings?.Values.GetValueOrDefault("accessCodeValidity"));
-        var accessTokenValidity = NonEmpty(application.Spec.ProviderSettings?.Values.GetValueOrDefault("accessTokenValidity"));
-        var refreshTokenValidity = NonEmpty(application.Spec.ProviderSettings?.Values.GetValueOrDefault("refreshTokenValidity"));
+        var accessCodeValidity = NonEmpty(settings.TokenSettings.AccessCodeValidity);
+        var accessTokenValidity = NonEmpty(settings.TokenSettings.AccessTokenValidity);
+        var refreshTokenValidity = NonEmpty(settings.TokenSettings.RefreshTokenValidity);
 
         var authorizationFlowTask = flowBuilder.BuildAsync(application.IdPProvider, authorizationFlowSlug, cancellationToken);
         var invalidationFlowTask = flowBuilder.BuildAsync(application.IdPProvider, invalidationFlowSlug, cancellationToken);
@@ -67,7 +63,7 @@ public class AuthentikOAuth2ProviderBuilder(
         static string? NonEmpty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
     }
 
-    private static void ValidateSupportedCoreProperties(IdPOidcApplication application)
+    private static void ValidateSupportedCoreProperties(AuthentikOidcApplicationModel application)
     {
         if (!string.IsNullOrWhiteSpace(application.Spec.ClientUri) ||
             !string.IsNullOrWhiteSpace(application.Spec.LogoUri) ||

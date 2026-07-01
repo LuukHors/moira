@@ -1,10 +1,9 @@
 apiVersion: moira.operator/v1alpha1
-kind: Provider
+kind: AuthentikProvider
 metadata:
   namespace: default
   name: authentik-provider
 spec:
-  type: Authentik
   baseUrl: https://auth.internal.sealeo.io
   secretRef:
     name: moira-test-oidc-credentials
