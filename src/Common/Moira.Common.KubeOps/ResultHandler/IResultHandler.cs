@@ -6,7 +6,7 @@ namespace Moira.Common.KubeOps.ResultHandler;
 
 public interface IResultHandler<in TK8SEntity, in TEntity> where TK8SEntity : CustomKubernetesEntity where TEntity : IdPEntityBase
 {
-    Task HandleAsync(TK8SEntity entity, TEntity idpEntity, CancellationToken cancellationToken);
+    Task HandleReconcileResultAsync(TK8SEntity entity, TEntity idpEntity, CancellationToken cancellationToken);
     Task HandleExceptionAsync(TK8SEntity entity, MoiraException exception, CancellationToken cancellationToken);
-    Task HandleDeleteAsync(TK8SEntity entity, TEntity idpEntity, CancellationToken cancellationToken);
+    Task HandleDeletedAsync(TK8SEntity entity, TEntity idpEntity, CancellationToken cancellationToken);
 }

@@ -12,12 +12,12 @@ using Moira.Common.KubeOps.Status;
 
 namespace Moira.Authentik.KubeOps.ResultHandler;
 
-public class GroupResultHandler(
+public class AuthentikGroupResultHandler(
     IKubernetesClient client,
     EntityRequeue<AuthentikGroup> entityRequeue,
-    ILogger<GroupResultHandler> logger) : IResultHandler<AuthentikGroup, AuthentikGroupModel>
+    ILogger<AuthentikGroupResultHandler> logger) : IResultHandler<AuthentikGroup, AuthentikGroupModel>
 {
-    public async Task HandleAsync(AuthentikGroup entity, AuthentikGroupModel idpEntity, CancellationToken cancellationToken)
+    public async Task HandleReconcileResultAsync(AuthentikGroup entity, AuthentikGroupModel idpEntity, CancellationToken cancellationToken)
     {
         entity.Status.ObservedGeneration = entity.Metadata.Generation;
         entity.Status.DisplayName = idpEntity.Status.DisplayName;
@@ -71,7 +71,7 @@ public class GroupResultHandler(
         logger.LogDebug("Requeued group after failed operation with delay {RequeueDelaySeconds}", 20);
     }
 
-    public Task HandleDeleteAsync(AuthentikGroup entity, AuthentikGroupModel idpEntity, CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task HandleDeletedAsync(AuthentikGroup entity, AuthentikGroupModel idpEntity, CancellationToken cancellationToken) => Task.CompletedTask;
 
     private static bool IsDeleting(AuthentikGroup entity)
     {

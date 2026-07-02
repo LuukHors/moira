@@ -6,14 +6,14 @@ using Moira.Authentik.Domain.ProviderSettings;
 using Moira.Authentik.KubeOps.Entities;
 using Moira.Common.Abstractions.Exceptions;
 using Moira.Common.Abstractions.Models;
-using Moira.Common.KubeOps.AdapterHandler.DependencyProvider;
+using Moira.Common.KubeOps.DependencyProvider;
 
-namespace Moira.Authentik.KubeOps.AdapterHandler.DependencyProvider;
+namespace Moira.Authentik.KubeOps.DependencyProvider;
 
-public class GroupDependencyProvider(
+public class AuthentikGroupDependencyProvider(
     IKubernetesClient client,
     IDependencyProvider<AuthentikProvider, IdPProvider> providerDependencyProvider,
-    ILogger<GroupDependencyProvider> logger) : IDependencyProvider<AuthentikGroup, AuthentikGroupModel>
+    ILogger<AuthentikGroupDependencyProvider> logger) : IDependencyProvider<AuthentikGroup, AuthentikGroupModel>
 {
     public async Task<AuthentikGroupModel> ResolveAsync(AuthentikGroup entity, CancellationToken cancellationToken)
     {

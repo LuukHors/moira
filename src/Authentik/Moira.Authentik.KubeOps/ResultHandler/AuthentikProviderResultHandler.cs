@@ -10,12 +10,12 @@ using Moira.Common.KubeOps.Status;
 
 namespace Moira.Authentik.KubeOps.ResultHandler;
 
-public class ProviderResultHandler(
+public class AuthentikProviderResultHandler(
     IKubernetesClient client,
     EntityRequeue<AuthentikProvider> entityRequeue,
-    ILogger<ProviderResultHandler> logger) : IResultHandler<AuthentikProvider, IdPProvider>
+    ILogger<AuthentikProviderResultHandler> logger) : IResultHandler<AuthentikProvider, IdPProvider>
 {
-    public async Task HandleAsync(AuthentikProvider entity, IdPProvider idpEntity, CancellationToken cancellationToken)
+    public async Task HandleReconcileResultAsync(AuthentikProvider entity, IdPProvider idpEntity, CancellationToken cancellationToken)
     {
         entity.Status.ObservedGeneration = entity.Metadata.Generation;
         entity.UpsertCondition(
@@ -74,7 +74,7 @@ public class ProviderResultHandler(
         logger.LogDebug("Requeued provider after failed operation with delay {RequeueDelaySeconds}", 20);
     }
 
-    public async Task HandleDeleteAsync(AuthentikProvider entity, IdPProvider idpEntity, CancellationToken cancellationToken)
+    public async Task HandleDeletedAsync(AuthentikProvider entity, IdPProvider idpEntity, CancellationToken cancellationToken)
     {
         entity.Status.ObservedGeneration = entity.Metadata.Generation;
         entity.UpsertCondition(

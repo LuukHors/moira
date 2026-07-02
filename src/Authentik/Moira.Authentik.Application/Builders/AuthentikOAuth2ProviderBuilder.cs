@@ -10,7 +10,6 @@ namespace Moira.Authentik.Application.Builders;
 
 public class AuthentikOAuth2ProviderBuilder(
     IAuthentikFlowBuilder flowBuilder,
-    IDefaultConfig<OidcAuthentikProviderSettings> defaultConfig,
     IAuthentikScopeMappingBuilder scopeMappingBuilder) : IAuthentikOAuth2ProviderBuilder
 {
     private static readonly IReadOnlyDictionary<string, object> DefaultAttributes = new Dictionary<string, object> { ["managed-by"] = "moira" };
@@ -24,12 +23,11 @@ public class AuthentikOAuth2ProviderBuilder(
     {
         ValidateSupportedCoreProperties(application);
 
-        var defaultSettings = defaultConfig.Receive();
         var settings = application.Spec.Authentik;
 
-        var authorizationFlowSlug = NonEmpty(settings.AuthorizationFlowSlug) ?? defaultSettings.AuthorizationFlowSlug!;
-        var invalidationFlowSlug = NonEmpty(settings.InvalidationFlowSlug) ?? defaultSettings.InvalidationFlowSlug!;
-        var redirectUriMatchingMode = NonEmpty(settings.RedirectUriMatchingMode) ?? defaultSettings.RedirectUriMatchingMode!;
+        var authorizationFlowSlug = NonEmpty(settings.AuthorizationFlowSlug);
+        var invalidationFlowSlug = NonEmpty(settings.InvalidationFlowSlug);
+        var redirectUriMatchingMode = NonEmpty(settings.RedirectUriMatchingMode) ;
 
         var accessCodeValidity = NonEmpty(settings.TokenSettings.AccessCodeValidity);
         var accessTokenValidity = NonEmpty(settings.TokenSettings.AccessTokenValidity);
@@ -55,9 +53,9 @@ public class AuthentikOAuth2ProviderBuilder(
             logout_uri = application.Spec.LogoutUri,
             redirect_uris = application.Spec.RedirectUris
                 .Select(uri => new AuthentikRedirectUriV3(redirectUriMatchingMode, uri)),
-            access_code_validity = accessCodeValidity ?? defaultSettings.TokenSettings.AccessCodeValidity,
-            access_token_validity = accessTokenValidity ?? defaultSettings.TokenSettings.AccessTokenValidity, 
-            refresh_token_validity = refreshTokenValidity ?? defaultSettings.TokenSettings.RefreshTokenValidity,
+            access_code_validity = accessCodeValidity,
+            access_token_validity = accessTokenValidity, 
+            refresh_token_validity = refreshTokenValidity,
         };
 
         static string? NonEmpty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;

@@ -5,7 +5,7 @@ using Moira.Common.KubeOps.PreReconcileSteps.ValidatorWebhooks.Executor;
 namespace Moira.Authentik.KubeOps.PreReconcileSteps.ValidatorWebhooks;
 
 [ValidationWebhook(typeof(AuthentikProvider))]
-public class ProviderValidationWebhook(IValidatorExecutor<AuthentikProvider> validator) : ValidationWebhook<AuthentikProvider>
+public class AuthentikProviderValidationWebhook(IValidatorExecutor<AuthentikProvider> validator) : ValidationWebhook<AuthentikProvider>
 {
     public override Task<ValidationResult> CreateAsync(AuthentikProvider entity, bool dryRun, CancellationToken cancellation) => validator.ExecuteAsync(entity, cancellation);
 

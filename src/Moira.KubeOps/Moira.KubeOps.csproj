@@ -18,6 +18,5 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Authentik\Moira.Authentik.KubeOps\Moira.Authentik.KubeOps.csproj" />
-      <ProjectReference Include="..\Common\Moira.Common.Services\Moira.Common.Services.csproj" />
     </ItemGroup>
 </Project>

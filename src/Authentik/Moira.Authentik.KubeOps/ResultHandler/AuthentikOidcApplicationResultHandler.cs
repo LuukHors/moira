@@ -13,13 +13,13 @@ using Moira.Common.KubeOps.Status;
 
 namespace Moira.Authentik.KubeOps.ResultHandler;
 
-public class OidcApplicationResultHandler(
+public class AuthentikOidcApplicationResultHandler(
     IKubernetesClient client,
     IOidcApplicationSecretService secretService,
     EntityRequeue<AuthentikOidcApplication> entityRequeue,
-    ILogger<OidcApplicationResultHandler> logger) : IResultHandler<AuthentikOidcApplication, AuthentikOidcApplicationModel>
+    ILogger<AuthentikOidcApplicationResultHandler> logger) : IResultHandler<AuthentikOidcApplication, AuthentikOidcApplicationModel>
 {
-    public async Task HandleAsync(AuthentikOidcApplication entity, AuthentikOidcApplicationModel idpEntity, CancellationToken cancellationToken)
+    public async Task HandleReconcileResultAsync(AuthentikOidcApplication entity, AuthentikOidcApplicationModel idpEntity, CancellationToken cancellationToken)
     {
         var secretTargetStatuses = await secretService.SyncAsync(entity, idpEntity, cancellationToken);
         var allSecretsSynced = secretTargetStatuses.All(status => status.Synced);
@@ -87,7 +87,7 @@ public class OidcApplicationResultHandler(
         entityRequeue(entity, TimeSpan.FromSeconds(20));
     }
 
-    public async Task HandleDeleteAsync(AuthentikOidcApplication entity, AuthentikOidcApplicationModel idpEntity, CancellationToken cancellationToken)
+    public async Task HandleDeletedAsync(AuthentikOidcApplication entity, AuthentikOidcApplicationModel idpEntity, CancellationToken cancellationToken)
     {
         await secretService.DeleteAsync(entity, cancellationToken);
     }

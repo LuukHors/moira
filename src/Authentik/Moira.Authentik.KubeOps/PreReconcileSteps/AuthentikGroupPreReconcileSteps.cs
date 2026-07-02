@@ -6,9 +6,9 @@ using Moira.Authentik.KubeOps.Entities;
 
 namespace Moira.Authentik.KubeOps.PreReconcileSteps;
 
-public class GroupPreReconcileSteps(
+public class AuthentikGroupPreReconcileSteps(
     EntityFinalizerAttacher<GroupFinalizer, AuthentikGroup> finalizer,
-    ILogger<GroupPreReconcileSteps> logger) : IPreReconcileSteps<AuthentikGroup>
+    ILogger<AuthentikGroupPreReconcileSteps> logger) : IPreReconcileSteps<AuthentikGroup>
 {
     public async Task<bool> ExecuteAsync(AuthentikGroup entity, CancellationToken cancellationToken)
     {

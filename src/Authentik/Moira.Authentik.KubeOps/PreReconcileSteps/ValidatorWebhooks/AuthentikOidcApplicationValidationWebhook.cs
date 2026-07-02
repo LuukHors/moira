@@ -5,7 +5,7 @@ using Moira.Common.KubeOps.PreReconcileSteps.ValidatorWebhooks.Executor;
 namespace Moira.Authentik.KubeOps.PreReconcileSteps.ValidatorWebhooks;
 
 [ValidationWebhook(typeof(AuthentikOidcApplication))]
-internal class OidcApplicationValidationWebhook(IValidatorExecutor<AuthentikOidcApplication> validator) : ValidationWebhook<AuthentikOidcApplication>
+internal class AuthentikOidcApplicationValidationWebhook(IValidatorExecutor<AuthentikOidcApplication> validator) : ValidationWebhook<AuthentikOidcApplication>
 {
     public override Task<ValidationResult> CreateAsync(AuthentikOidcApplication entity, bool dryRun, CancellationToken cancellation) 
         => validator.ExecuteAsync(entity, cancellation);

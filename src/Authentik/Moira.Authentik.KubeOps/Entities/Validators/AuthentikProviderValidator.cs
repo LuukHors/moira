@@ -2,9 +2,9 @@
 
 namespace Moira.Authentik.KubeOps.Entities.Validators;
 
-public class ProviderValidator : AbstractValidator<AuthentikProvider>
+public class AuthentikProviderValidator : AbstractValidator<AuthentikProvider>
 {
-    public ProviderValidator()
+    public AuthentikProviderValidator()
     {
         RuleFor(p => p.Spec.BaseUrl)
             .NotNull()

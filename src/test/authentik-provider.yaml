@@ -6,5 +6,5 @@ metadata:
 spec:
   baseUrl: https://auth.internal.sealeo.io
   secretRef:
-    name: moira-test-oidc-credentials
+    name: auth-secret
     namespace: default

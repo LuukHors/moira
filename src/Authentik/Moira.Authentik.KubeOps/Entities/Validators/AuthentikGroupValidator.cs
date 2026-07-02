@@ -2,9 +2,9 @@
 
 namespace Moira.Authentik.KubeOps.Entities.Validators;
 
-internal class GroupValidator : AbstractValidator<AuthentikGroup>
+internal class AuthentikGroupValidator : AbstractValidator<AuthentikGroup>
 {
-    public GroupValidator()
+    public AuthentikGroupValidator()
     {
         RuleFor(g => g.Spec.ProviderRef)
             .NotNull()

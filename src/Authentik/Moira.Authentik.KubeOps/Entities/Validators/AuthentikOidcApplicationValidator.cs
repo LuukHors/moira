@@ -3,7 +3,7 @@ using Moira.Common.Abstractions.Models;
 
 namespace Moira.Authentik.KubeOps.Entities.Validators;
 
-internal class OIDCApplicationValidator : AbstractValidator<AuthentikOidcApplication>
+internal class AuthentikOidcApplicationValidator : AbstractValidator<AuthentikOidcApplication>
 {
     private static readonly ISet<string> GrantTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
@@ -23,7 +23,7 @@ internal class OIDCApplicationValidator : AbstractValidator<AuthentikOidcApplica
         "code id_token token"
     };
 
-    public OIDCApplicationValidator()
+    public AuthentikOidcApplicationValidator()
     {
         RuleFor(a => a.Spec.DisplayName)
             .NotEmpty()

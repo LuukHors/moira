@@ -26,9 +26,9 @@ public class AuthentikOidcApplication : CustomKubernetesEntity<AuthentikOidcAppl
 
     public class TokenSettings
     {
-        public string AccessCodeValidity { get; set; } = string.Empty;
-        public string AccessTokenValidity { get; set; } = string.Empty;
-        public string RefreshTokenValidity { get; set; } = string.Empty;
+        public string AccessCodeValidity { get; set; } = "hours=1";
+        public string AccessTokenValidity { get; set; } = "hours=3";
+        public string RefreshTokenValidity { get; set; } = "days=2";
     }
 
     public class MetadataSettings

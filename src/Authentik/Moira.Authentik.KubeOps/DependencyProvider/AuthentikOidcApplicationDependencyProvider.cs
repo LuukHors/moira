@@ -8,14 +8,14 @@ using Moira.Authentik.KubeOps.Entities;
 using Moira.Authentik.KubeOps.Secrets.Models;
 using Moira.Common.Abstractions.Exceptions;
 using Moira.Common.Abstractions.Models;
-using Moira.Common.KubeOps.AdapterHandler.DependencyProvider;
+using Moira.Common.KubeOps.DependencyProvider;
 
-namespace Moira.Authentik.KubeOps.AdapterHandler.DependencyProvider;
+namespace Moira.Authentik.KubeOps.DependencyProvider;
 
-public class OidcApplicationDependencyProvider(
+public class AuthentikOidcApplicationDependencyProvider(
     IKubernetesClient client,
     IDependencyProvider<AuthentikProvider, IdPProvider> providerDependencyProvider,
-    ILogger<OidcApplicationDependencyProvider> logger) : IDependencyProvider<AuthentikOidcApplication, AuthentikOidcApplicationModel>
+    ILogger<AuthentikOidcApplicationDependencyProvider> logger) : IDependencyProvider<AuthentikOidcApplication, AuthentikOidcApplicationModel>
 {
     public async Task<AuthentikOidcApplicationModel> ResolveAsync(AuthentikOidcApplication entity, CancellationToken cancellationToken)
     {

@@ -2,7 +2,6 @@ using KubeOps.Operator;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Moira.Authentik.KubeOps;
-using Moira.Common.Services;
 using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Compact;
@@ -21,11 +20,10 @@ Log.Logger = new LoggerConfiguration()
     .WriteTo.Console(new RenderedCompactJsonFormatter())
     .CreateLogger();
 
+var operatorBuilder = builder.Services.AddKubernetesOperator(s => s.Name = "Moira");
+
 builder.Services
-    .AddMoiraCommon()
-    .AddMoiraAuthentikKubeOps()
-    .AddKubernetesOperator(s => s.Name = "Moira")
-    .RegisterComponents();
+    .AddMoiraAuthentik(operatorBuilder);
 
 builder.Logging.AddSerilog();
 

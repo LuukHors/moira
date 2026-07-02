@@ -8,10 +8,10 @@ using Moira.Common.KubeOps.PreReconcileSteps.ValidatorWebhooks.Executor;
 
 namespace Moira.Authentik.KubeOps.PreReconcileSteps;
 
-public class OidcApplicationPreReconcileSteps(
+public class AuthentikOidcApplicationPreReconcileSteps(
     EntityFinalizerAttacher<OidcApplicationFinalizer, AuthentikOidcApplication> finalizer,
     IValidatorExecutor<AuthentikOidcApplication> validator,
-    ILogger<OidcApplicationPreReconcileSteps> logger) : IPreReconcileSteps<AuthentikOidcApplication>
+    ILogger<AuthentikOidcApplicationPreReconcileSteps> logger) : IPreReconcileSteps<AuthentikOidcApplication>
 {
     public async Task<bool> ExecuteAsync(AuthentikOidcApplication entity, CancellationToken cancellationToken)
     {
