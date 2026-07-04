@@ -20,8 +20,11 @@ namespace Moira.Authentik.Kubernetes;
 
 public static class DependencyInjectionExtensions
 {
-    public static IServiceCollection AddMoiraAuthentik(this IServiceCollection services, IOperatorBuilder builder)
+    public static IServiceCollection AddMoiraAuthentik(this IServiceCollection services, bool enabled, IOperatorBuilder builder)
     {
+        if (!enabled)
+            return services;
+        
         services.AddMoiraAuthentikProvider();
 
         services.AddScoped<IAdapterHandler<AuthentikGroup>, AdapterHandler<AuthentikGroup, AuthentikGroupModel>>();

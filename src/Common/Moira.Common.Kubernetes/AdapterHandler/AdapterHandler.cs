@@ -21,8 +21,6 @@ public class AdapterHandler<TK8SEntity, TEntity>(
 {
     public async Task HandleReconcileAsync(TK8SEntity entity, CancellationToken cancellationToken)
     {
-        var timer = new Stopwatch();
-        timer.Start();
         var operationId = Guid.NewGuid();
         using var _ = logger.BeginScope(new Dictionary<string, object>
         {
@@ -45,9 +43,6 @@ public class AdapterHandler<TK8SEntity, TEntity>(
             var reconcileResult = await providerAdapter.ExecuteReconcileAsync(command, cancellationToken);
 
             await resultHandler.HandleReconcileResultAsync(entity, reconcileResult.Entity, cancellationToken);
-            
-            timer.Stop();
-            logger.LogInformation("Finished reconcile loop in {Duration}ms", timer.ElapsedMilliseconds);
         }
         catch (MoiraException ex)
         {
@@ -65,8 +60,6 @@ public class AdapterHandler<TK8SEntity, TEntity>(
 
     public async Task HandleDeleteAsync(TK8SEntity entity, CancellationToken cancellationToken)
     {
-        var timer = new Stopwatch();
-        timer.Start();
         var operationId = Guid.NewGuid();
         using var _ = logger.BeginScope(new Dictionary<string, object>
         {
@@ -87,8 +80,6 @@ public class AdapterHandler<TK8SEntity, TEntity>(
             await resultHandler.HandleDeletedAsync(entity, idPEntity, cancellationToken);
 
             if (entityDeleted) logger.LogInformation("Entity was deleted");
-            timer.Stop();
-            logger.LogInformation("Finished reconcile loop in {Duration}ms", timer.ElapsedMilliseconds);
         }
         catch (MoiraException ex)
         {

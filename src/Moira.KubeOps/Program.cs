@@ -1,5 +1,6 @@
 using KubeOps.Abstractions.Builder;
 using KubeOps.Operator;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Moira.Authentik.Kubernetes;
@@ -33,9 +34,11 @@ var operatorBuilder = builder.Services.AddKubernetesOperator(s =>
     s.Name = "Moira";
 });
 
+var authentikEnabled = builder.Configuration.GetValue<bool>("AuthentikEnabled");
+
 builder.Services
     .AddMoiraCommonKubernetes()
-    .AddMoiraAuthentik(operatorBuilder);
+    .AddMoiraAuthentik(authentikEnabled, operatorBuilder);
 
 builder.Logging.AddSerilog();
 
