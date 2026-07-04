@@ -8,7 +8,7 @@ using Moira.Common.Abstractions.Models;
 namespace Moira.Authentik.Controllers.Adapters;
 
 public class AuthentikGroupProviderAdapter(
-    IAuthentikHandler<AuthentikGroupModel, AuthentikGroupV3> handler) : AbstractAuthentikProviderAdapter, IProviderAdapter<AuthentikGroupModel>
+    IAuthentikHandler<AuthentikGroupModel, AuthentikGroupV3> handler) : IProviderAdapter<AuthentikGroupModel>
 {
     public async Task<IdPCommandResult<AuthentikGroupModel>> ExecuteReconcileAsync(IdPCommand<AuthentikGroupModel> command, CancellationToken cancellationToken)
     {

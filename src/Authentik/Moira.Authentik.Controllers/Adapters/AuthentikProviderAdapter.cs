@@ -8,7 +8,7 @@ namespace Moira.Authentik.Controllers.Adapters;
 
 public class AuthentikProviderAdapter(
     IAuthentikProviderHandler providerHandler,
-    ILogger<AuthentikProviderAdapter> logger) : AbstractAuthentikProviderAdapter, IProviderAdapter<IdPProvider>
+    ILogger<AuthentikProviderAdapter> logger) : IProviderAdapter<IdPProvider>
 {
     public async Task<IdPCommandResult<IdPProvider>> ExecuteReconcileAsync(IdPCommand<IdPProvider> command, CancellationToken cancellationToken)
     {
