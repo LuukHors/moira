@@ -53,11 +53,13 @@ public class AdapterHandler<TK8SEntity, TEntity>(
         {
             logger.LogError(ex, "Reconcile operation failed with reason {FailureReason}", ex.Reason);
             await resultHandler.HandleExceptionAsync(entity, ex, cancellationToken);
+            throw;
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Unexpected reconcile operation failed");
             await resultHandler.HandleExceptionAsync(entity, new UnknownMoiraException("Unexpected reconciliation error.", ex), cancellationToken);
+            throw;
         }
     }
 
@@ -92,11 +94,13 @@ public class AdapterHandler<TK8SEntity, TEntity>(
         {
             logger.LogError(ex, "Delete operation failed with reason {FailureReason}", ex.Reason);
             await resultHandler.HandleExceptionAsync(entity, ex, cancellationToken);
+            throw;
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Unexpected delete operation failed");
             await resultHandler.HandleExceptionAsync(entity, new UnknownMoiraException("Unexpected deletion error.", ex), cancellationToken);
+            throw;
         }
     }
 }
