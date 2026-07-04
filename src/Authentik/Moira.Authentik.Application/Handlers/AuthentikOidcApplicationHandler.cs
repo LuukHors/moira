@@ -1,3 +1,4 @@
+using Moira.Authentik.Application.Models;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using Moira.Authentik.Application.Builders;
@@ -20,7 +21,7 @@ public partial class AuthentikOidcApplicationHandler(
 {
     private static readonly IReadOnlyDictionary<string, object> DefaultAttributes = new Dictionary<string, object> { ["managed-by"] = "moira" };
 
-    public async Task<AuthentikOidcApplicationV3?> GetAsync(IdPCommand<IdPOidcApplication> command, CancellationToken cancellationToken)
+    public async Task<AuthentikOidcApplicationV3?> GetAsync(IdPCommand<AuthentikOidcApplicationModel> command, CancellationToken cancellationToken)
     {
         var application = await GetApplicationAsync(command, cancellationToken);
         if (application is null)
@@ -43,14 +44,13 @@ public partial class AuthentikOidcApplicationHandler(
         return new AuthentikOidcApplicationV3(application, provider);
     }
 
-    public async Task<IdPCommandResult<IdPOidcApplication>> CreateAsync(IdPCommand<IdPOidcApplication> command, CancellationToken cancellationToken)
+    public async Task<IdPCommandResult<AuthentikOidcApplicationModel>> CreateAsync(IdPCommand<AuthentikOidcApplicationModel> command, CancellationToken cancellationToken)
     {
         var now = DateTime.UtcNow;
         var provider = await CreateProviderAsync(command, cancellationToken);
 
-        var providerSettings = command.Entity.Spec.ProviderSettings;
         var application = await applicationRepository.CreateAsync(
-            applicationBuilder.Build(providerSettings, command.Entity, provider.pk, null),
+            applicationBuilder.Build(command.Entity, provider.pk, null),
             command.Entity.IdPProvider,
             cancellationToken);
 
@@ -60,7 +60,7 @@ public partial class AuthentikOidcApplicationHandler(
     }
 
     public async Task<AuthentikOAuth2ProviderV3> CreateProviderAsync(
-        IdPCommand<IdPOidcApplication> command,
+        IdPCommand<AuthentikOidcApplicationModel> command,
         CancellationToken cancellationToken)
     {
         var clientId = GenerateToken(24);
@@ -72,9 +72,9 @@ public partial class AuthentikOidcApplicationHandler(
             cancellationToken);
     }
 
-    public async Task<IdPCommandResult<IdPOidcApplication>> UpdateAsync(
+    public async Task<IdPCommandResult<AuthentikOidcApplicationModel>> UpdateAsync(
         AuthentikOidcApplicationV3 current,
-        IdPCommand<IdPOidcApplication> command,
+        IdPCommand<AuthentikOidcApplicationModel> command,
         CancellationToken cancellationToken)
     {
         var now = DateTime.UtcNow;
@@ -101,8 +101,7 @@ public partial class AuthentikOidcApplicationHandler(
             command,
             cancellationToken);
 
-        var providerSettings = command.Entity.Spec.ProviderSettings;
-        var desiredApplication = applicationBuilder.Build(providerSettings, command.Entity, updatedProvider.pk ?? current.Application.provider, current.Application.pk);
+        var desiredApplication = applicationBuilder.Build(command.Entity, updatedProvider.pk ?? current.Application.provider, current.Application.pk);
         var updatedApplication = await ReconcileApplicationAsync(
             current.Application,
             desiredApplication,
@@ -112,7 +111,7 @@ public partial class AuthentikOidcApplicationHandler(
         return Result(command, updatedApplication, updatedProvider, clientSecret, shouldRotate ? now : command.Entity.Status.LastRotatedAt ?? now);
     }
 
-    public async Task<bool> DeleteAsync(IdPCommand<IdPOidcApplication> command, CancellationToken cancellationToken)
+    public async Task<bool> DeleteAsync(IdPCommand<AuthentikOidcApplicationModel> command, CancellationToken cancellationToken)
     {
         if (!command.Entity.Spec.AutoDelete)
         {
@@ -148,7 +147,7 @@ public partial class AuthentikOidcApplicationHandler(
     }
 
     private async Task<AuthentikApplicationV3?> GetApplicationAsync(
-        IdPCommand<IdPOidcApplication> command,
+        IdPCommand<AuthentikOidcApplicationModel> command,
         CancellationToken cancellationToken)
     {
         if (!string.IsNullOrEmpty(command.Entity.Status.ApplicationId))
@@ -173,7 +172,7 @@ public partial class AuthentikOidcApplicationHandler(
         AuthentikOAuth2ProviderV3 current,
         AuthentikOAuth2ProviderV3 desired,
         bool shouldRotate,
-        IdPCommand<IdPOidcApplication> command,
+        IdPCommand<AuthentikOidcApplicationModel> command,
         CancellationToken cancellationToken)
     {
         if (!shouldRotate && !providerUpdateChecker.ShouldUpdate(desired, current))
@@ -189,7 +188,7 @@ public partial class AuthentikOidcApplicationHandler(
     private async Task<AuthentikApplicationV3> ReconcileApplicationAsync(
         AuthentikApplicationV3 current,
         AuthentikApplicationV3 desired,
-        IdPCommand<IdPOidcApplication> command,
+        IdPCommand<AuthentikOidcApplicationModel> command,
         CancellationToken cancellationToken)
     {
         if (!applicationUpdateChecker.ShouldUpdate(desired, current))
@@ -202,17 +201,17 @@ public partial class AuthentikOidcApplicationHandler(
         return await applicationRepository.UpdateAsync(current.slug, desired, command.Entity.IdPProvider, cancellationToken);
     }
 
-    private static IdPCommandResult<IdPOidcApplication> Result(
-        IdPCommand<IdPOidcApplication> command,
+    private static IdPCommandResult<AuthentikOidcApplicationModel> Result(
+        IdPCommand<AuthentikOidcApplicationModel> command,
         AuthentikApplicationV3 application,
         AuthentikOAuth2ProviderV3 provider,
         string clientSecret,
         DateTime lastRotatedAt)
     {
-        return new IdPCommandResult<IdPOidcApplication>(
+        return new IdPCommandResult<AuthentikOidcApplicationModel>(
             command.Id,
             command.Entity.CopyWithNewStatus(
-                new IdPOidcApplicationStatus(
+                new AuthentikOidcApplicationStatus(
                     application.slug,
                     provider.client_id,
                     command.Entity.Spec.UsesClientSecret ? lastRotatedAt : null,

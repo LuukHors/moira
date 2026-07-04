@@ -1,5 +1,5 @@
 apiVersion: moira.operator/v1alpha1
-kind: OidcApplication
+kind: AuthentikOidcApplication
 metadata:
   name: dev-argocd-application
   namespace: default
@@ -8,10 +8,11 @@ spec:
   autoDelete: true
   providerRef:
     name: authentik-provider
-  providerSettingsRef:
-    apiVersion: moira.operator/v1alpha1
-    kind: AuthentikOidcApplicationSettings
-    name: default-settings
+  group: moira
+  metadataSettings:
+    publisher: moira.cloud
+  tokenSettings:
+    accessTokenValidity: days=10
   oidc:
     redirectUris:
       - https://argocd.example.com/auth/callback
@@ -26,19 +27,7 @@ spec:
         client-secret: "{clientSecret}"
 ---
 apiVersion: moira.operator/v1alpha1
-kind: AuthentikOidcApplicationSettings
-metadata:
-  name: default-settings
-  namespace: default
-spec:
-  group: moira
-  metadataSettings:
-    publisher: moira.cloud
-  tokenSettings:
-    accessTokenValidity: days=10
----
-apiVersion: moira.operator/v1alpha1
-kind: OidcApplication
+kind: AuthentikOidcApplication
 metadata:
   name: moira-test
   namespace: default
@@ -47,10 +36,11 @@ spec:
   autoDelete: false
   providerRef:
     name: authentik-provider
-  providerSettingsRef:
-    apiVersion: moira.operator/v1alpha1
-    kind: AuthentikOidcApplicationSettings
-    name: default-settings
+  group: moira
+  metadataSettings:
+    publisher: moira.cloud
+  tokenSettings:
+    accessTokenValidity: days=10
   oidc:
     redirectUris:
       - https://moira.example.com/oauth/callback
@@ -60,7 +50,7 @@ spec:
       namespace: default
 ---
 apiVersion: moira.operator/v1alpha1
-kind: OidcApplication
+kind: AuthentikOidcApplication
 metadata:
   name: native-public-client
   namespace: default
@@ -68,10 +58,11 @@ spec:
   displayName: native-public-client
   providerRef:
     name: authentik-provider
-  providerSettingsRef:
-    apiVersion: moira.operator/v1alpha1
-    kind: AuthentikOidcApplicationSettings
-    name: default-settings
+  group: moira
+  metadataSettings:
+    publisher: moira.cloud
+  tokenSettings:
+    accessTokenValidity: days=10
   oidc:
     applicationType: Native
     clientAuthenticationMethod: None

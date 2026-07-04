@@ -1,9 +1,8 @@
-using KubeOps.Abstractions.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Moira.Authentik.Application;
+using Moira.Authentik.Application.Models;
 using Moira.Authentik.Controllers.Adapters;
 using Moira.Authentik.Infrastructure;
-using Moira.Authentik.KubeOps;
 using Moira.Common.Abstractions;
 using Moira.Common.Abstractions.Models;
 
@@ -14,12 +13,11 @@ public static class DependencyInjectionExtensions
     public static IServiceCollection AddMoiraAuthentikProvider(this IServiceCollection services)
     {
         services
-            .AddAuthentikKubeOps()
             .AddAuthentikInfrastructure()
             .AddAuthentikApplication();
 
-        services.AddScoped<IProviderAdapter<IdPGroup>, AuthentikGroupProviderAdapter>();
-        services.AddScoped<IProviderAdapter<IdPOidcApplication>, AuthentikApplicationProviderAdapter>();
+        services.AddScoped<IProviderAdapter<AuthentikGroupModel>, AuthentikGroupProviderAdapter>();
+        services.AddScoped<IProviderAdapter<AuthentikOidcApplicationModel>, AuthentikApplicationProviderAdapter>();
         services.AddScoped<IProviderAdapter<IdPProvider>, AuthentikProviderAdapter>();
 
         return services;

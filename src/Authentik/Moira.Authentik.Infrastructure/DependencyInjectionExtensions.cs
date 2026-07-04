@@ -15,7 +15,7 @@ public static class DependencyInjectionExtensions
 {
     public static IServiceCollection AddAuthentikInfrastructure(this IServiceCollection services)
     {
-        services.AddSingleton<IAuthentikAuthenticationService, AuthentikAuthenticationService>();
+        services.AddSingleton<IAuthentikAuthenticationService, AuthentikTokenService>();
         services.AddScoped<IAuthentikProviderCheckService, AuthentikProviderCheckService>();
         services.AddScoped<IAuthentikVersionService, AuthentikVersionService>();
         services.AddScoped(typeof(IAuthentikRepository<,,>), typeof(AuthentikHttpService<,,>));
