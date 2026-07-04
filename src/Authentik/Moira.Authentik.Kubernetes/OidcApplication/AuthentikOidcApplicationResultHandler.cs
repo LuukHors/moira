@@ -1,4 +1,3 @@
-using KubeOps.Abstractions.Queue;
 using KubeOps.KubernetesClient;
 using Microsoft.Extensions.Logging;
 using Moira.Authentik.Application.Models;
@@ -14,7 +13,6 @@ namespace Moira.Authentik.Kubernetes.OidcApplication;
 public class AuthentikOidcApplicationResultHandler(
     IKubernetesClient client,
     IOidcApplicationSecretService<AuthentikOidcApplication> secretService,
-    EntityRequeue<AuthentikOidcApplication> entityRequeue,
     ILogger<AuthentikOidcApplicationResultHandler> logger) : IResultHandler<AuthentikOidcApplication, AuthentikOidcApplicationModel>
 {
     public async Task HandleReconcileResultAsync(AuthentikOidcApplication entity, AuthentikOidcApplicationModel idpEntity, CancellationToken cancellationToken)
@@ -56,8 +54,6 @@ public class AuthentikOidcApplicationResultHandler(
 
         await client.UpdateStatusAsync(entity, cancellationToken);
         logger.LogDebug("Updated OIDC application status after reconcile with application id {ApplicationId}", idpEntity.Status.ApplicationId);
-
-        entityRequeue(entity, TimeSpan.FromSeconds(20));
     }
 
     public async Task HandleExceptionAsync(AuthentikOidcApplication entity, MoiraException exception, CancellationToken cancellationToken)
@@ -82,8 +78,6 @@ public class AuthentikOidcApplicationResultHandler(
 
         await client.UpdateStatusAsync(entity, cancellationToken);
         logger.LogDebug("Updated OIDC application status after failed operation with reason {FailureReason}", exception.Reason);
-
-        entityRequeue(entity, TimeSpan.FromSeconds(20));
     }
 
     public async Task HandleDeletedAsync(AuthentikOidcApplication entity, AuthentikOidcApplicationModel idpEntity, CancellationToken cancellationToken)

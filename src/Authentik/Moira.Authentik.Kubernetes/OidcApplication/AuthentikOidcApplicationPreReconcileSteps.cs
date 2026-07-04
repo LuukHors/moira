@@ -1,4 +1,4 @@
-using KubeOps.Abstractions.Finalizer;
+using KubeOps.Abstractions.Reconciliation.Finalizer;
 using Microsoft.Extensions.Logging;
 using Moira.Authentik.Kubernetes.Controllers;
 using Moira.Common.Abstractions.Exceptions;

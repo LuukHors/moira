@@ -1,4 +1,3 @@
-using KubeOps.Abstractions.Queue;
 using KubeOps.KubernetesClient;
 using Microsoft.Extensions.Logging;
 using Moira.Authentik.Application.Models;
@@ -11,7 +10,6 @@ namespace Moira.Authentik.Kubernetes.Group;
 
 public class AuthentikGroupResultHandler(
     IKubernetesClient client,
-    EntityRequeue<AuthentikGroup> entityRequeue,
     ILogger<AuthentikGroupResultHandler> logger) : IResultHandler<AuthentikGroup, AuthentikGroupModel>
 {
     public async Task HandleReconcileResultAsync(AuthentikGroup entity, AuthentikGroupModel idpEntity, CancellationToken cancellationToken)
@@ -36,9 +34,6 @@ public class AuthentikGroupResultHandler(
 
         await client.UpdateStatusAsync(entity, cancellationToken);
         logger.LogDebug("Updated group status after successful reconcile with group id {GroupId}", idpEntity.Status.GroupId);
-        
-        entityRequeue(entity, TimeSpan.FromSeconds(20));
-        logger.LogDebug("Requeued group after successful reconcile with delay {RequeueDelaySeconds}", 20);
     }
 
     public async Task HandleExceptionAsync(AuthentikGroup entity, MoiraException exception, CancellationToken cancellationToken)
@@ -63,17 +58,7 @@ public class AuthentikGroupResultHandler(
 
         await client.UpdateStatusAsync(entity, cancellationToken);
         logger.LogDebug("Updated group status after failed operation with reason {FailureReason}", exception.Reason);
-        
-        entityRequeue(entity, TimeSpan.FromSeconds(20));
-        logger.LogDebug("Requeued group after failed operation with delay {RequeueDelaySeconds}", 20);
     }
 
     public Task HandleDeletedAsync(AuthentikGroup entity, AuthentikGroupModel idpEntity, CancellationToken cancellationToken) => Task.CompletedTask;
-
-    private static bool IsDeleting(AuthentikGroup entity)
-    {
-        return entity.Status.Conditions.Any(condition =>
-            condition.Type == ConditionTypes.Deleting
-            && condition.Status == ConditionStatus.True);
-    }
 }

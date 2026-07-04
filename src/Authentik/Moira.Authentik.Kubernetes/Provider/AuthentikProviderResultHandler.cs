@@ -1,4 +1,3 @@
-using KubeOps.Abstractions.Queue;
 using KubeOps.KubernetesClient;
 using Microsoft.Extensions.Logging;
 using Moira.Common.Abstractions.Exceptions;
@@ -11,7 +10,6 @@ namespace Moira.Authentik.Kubernetes.Provider;
 
 public class AuthentikProviderResultHandler(
     IKubernetesClient client,
-    EntityRequeue<AuthentikProvider> entityRequeue,
     ILogger<AuthentikProviderResultHandler> logger) : IResultHandler<AuthentikProvider, IdPProvider>
 {
     public async Task HandleReconcileResultAsync(AuthentikProvider entity, IdPProvider idpEntity, CancellationToken cancellationToken)
@@ -32,9 +30,6 @@ public class AuthentikProviderResultHandler(
 
         await client.UpdateStatusAsync(entity, cancellationToken);
         logger.LogDebug("Updated provider status after successful provider check");
-        
-        entityRequeue(entity, TimeSpan.FromSeconds(20));
-        logger.LogDebug("Requeued provider after successful provider check with delay {RequeueDelaySeconds}", 20);
     }
 
     public async Task HandleExceptionAsync(AuthentikProvider entity, MoiraException exception, CancellationToken cancellationToken)
@@ -68,9 +63,6 @@ public class AuthentikProviderResultHandler(
 
         await client.UpdateStatusAsync(entity, cancellationToken);
         logger.LogDebug("Updated provider status after failed operation with reason {FailureReason}", exception.Reason);
-        
-        entityRequeue(entity, TimeSpan.FromSeconds(20));
-        logger.LogDebug("Requeued provider after failed operation with delay {RequeueDelaySeconds}", 20);
     }
 
     public async Task HandleDeletedAsync(AuthentikProvider entity, IdPProvider idpEntity, CancellationToken cancellationToken)
