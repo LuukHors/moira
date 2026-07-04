@@ -7,7 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\Moira.Common\Moira.Common.csproj" />
+      <ProjectReference Include="..\..\Common\Moira.Common.Abstractions\Moira.Common.Abstractions.csproj" />
       <ProjectReference Include="..\Moira.Authentik.Domain\Moira.Authentik.Domain.csproj" />
       <ProjectReference Include="..\Moira.Authentik.Application\Moira.Authentik.Application.csproj" />
       <ProjectReference Include="..\Moira.Authentik.Infrastructure\Moira.Authentik.Infrastructure.csproj" />

@@ -1,11 +1,12 @@
+using Moira.Authentik.Application.Models;
 using Microsoft.Extensions.Logging;
 using Moira.Authentik.Application.Mappers;
 using Moira.Authentik.Application.Ports;
 using Moira.Authentik.Domain.Groups;
-using Moira.Common.Commands;
-using Moira.Common.Exceptions;
-using Moira.Common.Models;
 using Moira.Authentik.Domain.ProviderSettings;
+using Moira.Common.Abstractions.Commands;
+using Moira.Common.Abstractions.Exceptions;
+using Moira.Common.Abstractions.Models;
 
 namespace Moira.Authentik.Application.Builders;
 
@@ -16,25 +17,21 @@ public class AuthentikGroupBuilder(
     private static readonly IReadOnlyDictionary<string, object> DefaultAttributes =
         new Dictionary<string, object> { ["managed-by"] = "moira" };
 
-    public async Task<AuthentikGroupV3> BuildAsync(IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
+    public async Task<AuthentikGroupV3> BuildAsync(IdPCommand<AuthentikGroupModel> command, CancellationToken cancellationToken)
     {
         var parentIds = await ResolveParentIdsAsync(command, cancellationToken);
-        var attributes = MergeAttributes(command.Entity.Spec.ProviderSettings);
+        var attributes = MergeAttributes(command.Entity.Spec.Authentik);
         return command.Entity.ToAuthentikGroup(parentIds, attributes);
     }
 
-    private static IReadOnlyDictionary<string, object> MergeAttributes(GroupProviderSettings? providerSettings)
+    private static IReadOnlyDictionary<string, object> MergeAttributes(AuthentikGroupProviderSettings settings)
     {
-        if (providerSettings is null)
-            return DefaultAttributes;
-
-        var settings = providerSettings.ToAuthentikSettings();
         return DefaultAttributes
             .Concat(settings.Attributes.Values.Select(kv => new KeyValuePair<string, object>(kv.Key, kv.Value)))
             .ToDictionary(kv => kv.Key, kv => kv.Value);
     }
 
-    private async Task<IEnumerable<string>> ResolveParentIdsAsync(IdPCommand<IdPGroup> command, CancellationToken cancellationToken)
+    private async Task<IEnumerable<string>> ResolveParentIdsAsync(IdPCommand<AuthentikGroupModel> command, CancellationToken cancellationToken)
     {
         var memberOfNames = command.Entity.Spec.MemberOf
             .Where(memberOf => !string.IsNullOrEmpty(memberOf))

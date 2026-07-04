@@ -1,7 +1,7 @@
 namespace Moira.Authentik.Domain.ProviderSettings;
 
 public record AuthentikApplicationMetadataSettings(
-    string? Description = null,
-    string? Icon = null,
-    string? Publisher = null,
+    string Description = "",
+    string Icon = "",
+    string Publisher = "",
     bool OpenInNewTab = false);

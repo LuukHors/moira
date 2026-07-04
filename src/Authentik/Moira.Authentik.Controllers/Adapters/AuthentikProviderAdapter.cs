@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Logging;
 using Moira.Authentik.Application.Handlers;
-using Moira.Common.Commands;
-using Moira.Common.Models;
-using Moira.Common.Provider;
+using Moira.Common.Abstractions;
+using Moira.Common.Abstractions.Commands;
+using Moira.Common.Abstractions.Models;
 
 namespace Moira.Authentik.Controllers.Adapters;
 

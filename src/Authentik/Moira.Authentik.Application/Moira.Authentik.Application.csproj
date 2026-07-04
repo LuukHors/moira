@@ -7,7 +7,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\Moira.Common\Moira.Common.csproj" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2" />
+      <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.3" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <ProjectReference Include="..\..\Common\Moira.Common.Abstractions\Moira.Common.Abstractions.csproj" />
       <ProjectReference Include="..\Moira.Authentik.Domain\Moira.Authentik.Domain.csproj" />
     </ItemGroup>
 

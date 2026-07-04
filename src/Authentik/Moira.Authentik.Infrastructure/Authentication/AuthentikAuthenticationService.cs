@@ -2,8 +2,8 @@ using System.Collections.Concurrent;
 using Flurl;
 using Flurl.Http;
 using Microsoft.Extensions.Logging;
-using Moira.Common.Exceptions;
-using Moira.Common.Models;
+using Moira.Common.Abstractions.Exceptions;
+using Moira.Common.Abstractions.Models;
 
 namespace Moira.Authentik.Infrastructure.Authentication;
 
@@ -64,8 +64,6 @@ public class AuthentikAuthenticationService(
     {
         logger.LogDebug("Requesting new Authentik token for provider {ProviderName}", provider.Name);
 
-        var endpoint = string.Empty;
-
         try
         {
             var requestContent = new List<KeyValuePair<string, string>>
@@ -80,8 +78,6 @@ public class AuthentikAuthenticationService(
                 .AppendPathSegment("/application/o/token/")
                 .WithHeader("Accept", "application/json")
                 .WithTimeout(10);
-
-            endpoint = url.Url.ToString();
 
             var result = await url.PostUrlEncodedAsync(requestContent, cancellationToken: cancellationToken)
                 .ReceiveJson<AuthentikAuthenticationResponseBody>();

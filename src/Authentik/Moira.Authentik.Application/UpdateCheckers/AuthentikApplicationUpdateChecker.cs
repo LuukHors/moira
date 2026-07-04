@@ -1,5 +1,5 @@
 using Moira.Authentik.Domain.Applications;
-using Moira.Common.Provider;
+using Moira.Common.Abstractions;
 
 namespace Moira.Authentik.Application.UpdateCheckers;
 
