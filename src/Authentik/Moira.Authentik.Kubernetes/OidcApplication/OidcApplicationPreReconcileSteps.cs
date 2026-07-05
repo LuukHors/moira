@@ -7,10 +7,10 @@ using Moira.Common.Kubernetes.PreReconcileSteps.ValidatorWebhooks.Executor;
 
 namespace Moira.Authentik.Kubernetes.OidcApplication;
 
-public class AuthentikOidcApplicationPreReconcileSteps(
+public class OidcApplicationPreReconcileSteps(
     EntityFinalizerAttacher<OidcApplicationFinalizer, AuthentikOidcApplication> finalizer,
     IValidatorExecutor<AuthentikOidcApplication> validator,
-    ILogger<AuthentikOidcApplicationPreReconcileSteps> logger) : IPreReconcileSteps<AuthentikOidcApplication>
+    ILogger<OidcApplicationPreReconcileSteps> logger) : IPreReconcileSteps<AuthentikOidcApplication>
 {
     public async Task<bool> ExecuteAsync(AuthentikOidcApplication entity, CancellationToken cancellationToken)
     {

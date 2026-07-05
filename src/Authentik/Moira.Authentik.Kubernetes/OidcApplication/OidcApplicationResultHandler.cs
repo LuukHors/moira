@@ -1,6 +1,7 @@
 using KubeOps.KubernetesClient;
 using Microsoft.Extensions.Logging;
 using Moira.Authentik.Application.Models;
+using Moira.Authentik.Application.Models.OidcApplication;
 using Moira.Common.Abstractions.Exceptions;
 using Moira.Common.Kubernetes.Mappers;
 using Moira.Common.Kubernetes.ResultHandler;
@@ -10,10 +11,10 @@ using Moira.Common.Kubernetes.Status;
 
 namespace Moira.Authentik.Kubernetes.OidcApplication;
 
-public class AuthentikOidcApplicationResultHandler(
+public class OidcApplicationResultHandler(
     IKubernetesClient client,
     IOidcApplicationSecretService<AuthentikOidcApplication> secretService,
-    ILogger<AuthentikOidcApplicationResultHandler> logger) : IResultHandler<AuthentikOidcApplication, AuthentikOidcApplicationModel>
+    ILogger<OidcApplicationResultHandler> logger) : IResultHandler<AuthentikOidcApplication, AuthentikOidcApplicationModel>
 {
     public async Task HandleReconcileResultAsync(AuthentikOidcApplication entity, AuthentikOidcApplicationModel idpEntity, CancellationToken cancellationToken)
     {

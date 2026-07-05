@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Moira.Authentik.Application.Ports;
 using Moira.Authentik.Domain.Applications;
 using Moira.Authentik.Domain.Groups;
+using Moira.Authentik.Domain.Roles;
 using Moira.Authentik.Infrastructure.Authentication;
 using Moira.Authentik.Infrastructure.Http;
 using Moira.Authentik.Infrastructure.Http.Routes;
@@ -25,7 +26,8 @@ public static class DependencyInjectionExtensions
         services.AddScoped<IAuthentikRoute<AuthentikOAuth2ProviderV3, AuthentikOAuth2ProviderV3, int>, OAuth2ProviderRouteV3>();
         services.AddScoped<IAuthentikRoute<AuthentikFlowV3, AuthentikFlowV3, string>, FlowRouteV3>();
         services.AddScoped<IAuthentikRoute<AuthentikScopeMappingV3, AuthentikScopeMappingV3, string>, ScopeMappingRouteV3>();
-
+        services.AddScoped<IAuthentikRoute<AuthentikRoleV3, AuthentikRoleV3, string>, RoleRouteV3>();
+        
         return services;
     }
 }

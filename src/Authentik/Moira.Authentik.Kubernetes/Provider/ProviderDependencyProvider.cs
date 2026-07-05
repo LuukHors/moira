@@ -8,9 +8,9 @@ using Moira.Common.Kubernetes.DependencyProvider;
 
 namespace Moira.Authentik.Kubernetes.Provider;
 
-public class AuthentikProviderDependencyProvider(
+public class ProviderDependencyProvider(
     IKubernetesClient client,
-    ILogger<AuthentikProviderDependencyProvider> logger) : IDependencyProvider<AuthentikProvider, IdPProvider>
+    ILogger<ProviderDependencyProvider> logger) : IDependencyProvider<AuthentikProvider, IdPProvider>
 {
     private const string ProviderType = "Authentik";
 

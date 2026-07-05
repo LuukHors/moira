@@ -1,6 +1,6 @@
 using Moira.Common.Abstractions.Models;
 
-namespace Moira.Authentik.Application.Models;
+namespace Moira.Authentik.Application.Models.Group;
 
 public record AuthentikGroupModel(
     string Namespace,

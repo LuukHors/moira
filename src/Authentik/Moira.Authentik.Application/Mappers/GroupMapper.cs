@@ -1,4 +1,5 @@
 using Moira.Authentik.Application.Models;
+using Moira.Authentik.Application.Models.Group;
 using Moira.Authentik.Domain.Groups;
 using Moira.Common.Abstractions.Models;
 

@@ -1,7 +1,7 @@
 using Moira.Authentik.Domain.ProviderSettings;
 using Moira.Common.Abstractions.Models;
 
-namespace Moira.Authentik.Application.Models;
+namespace Moira.Authentik.Application.Models.OidcApplication;
 
 public record AuthentikOidcApplicationSpec(
     string DisplayName,

@@ -33,7 +33,7 @@ metadata:
   namespace: default
 spec:
   displayName: moira-test
-  autoDelete: false
+  autoDelete: true
   providerRef:
     name: authentik-provider
   group: moira

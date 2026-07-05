@@ -1,6 +1,7 @@
 using KubeOps.KubernetesClient;
 using Microsoft.Extensions.Logging;
 using Moira.Authentik.Application.Models;
+using Moira.Authentik.Application.Models.Group;
 using Moira.Common.Abstractions.Exceptions;
 using Moira.Common.Kubernetes.Mappers;
 using Moira.Common.Kubernetes.ResultHandler;

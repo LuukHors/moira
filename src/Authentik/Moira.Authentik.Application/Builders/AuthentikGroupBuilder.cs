@@ -1,6 +1,7 @@
 using Moira.Authentik.Application.Models;
 using Microsoft.Extensions.Logging;
 using Moira.Authentik.Application.Mappers;
+using Moira.Authentik.Application.Models.Group;
 using Moira.Authentik.Application.Ports;
 using Moira.Authentik.Domain.Groups;
 using Moira.Authentik.Domain.ProviderSettings;

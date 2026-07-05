@@ -2,6 +2,7 @@ using Moira.Authentik.Application.Models;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using Moira.Authentik.Application.Builders;
+using Moira.Authentik.Application.Models.OidcApplication;
 using Moira.Authentik.Application.Ports;
 using Moira.Authentik.Domain.Applications;
 using Moira.Common.Abstractions;
