@@ -1,5 +1,4 @@
 using KubeOps.Abstractions.Reconciliation.Finalizer;
-using KubeOps.KubernetesClient;
 using Moira.Authentik.Kubernetes.Controllers;
 using Moira.Common.Kubernetes.PreReconcileSteps;
 

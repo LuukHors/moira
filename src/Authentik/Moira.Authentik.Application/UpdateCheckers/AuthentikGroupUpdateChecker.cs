@@ -12,7 +12,10 @@ public class AuthentikGroupUpdateChecker : IUpdateChecker<AuthentikGroupV3, Auth
 
         var desiredParentIds = desired.parents.ToHashSet();
         var currentParentIds = current.parents.ToHashSet();
+        
+        var desiredRoleIds = desired.roles.ToHashSet();
+        var currentRoleIds = current.roles.ToHashSet();
 
-        return !desiredParentIds.SetEquals(currentParentIds);
+        return !desiredParentIds.SetEquals(currentParentIds) || !desiredRoleIds.SetEquals(currentRoleIds);
     }
 }

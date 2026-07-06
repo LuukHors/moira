@@ -29,6 +29,8 @@ internal class AuthentikHttpService<TModel, TModelWrite, TId>(
             if (!string.IsNullOrEmpty(name))
                 request.AppendQueryParam("name", name);
 
+            request.AppendQueryParam("page_size", 999);
+            
             return await request
                 .GetAsync(cancellationToken: cancellationToken)
                 .ReceiveJson<AuthentikPageResult<TModel>>();

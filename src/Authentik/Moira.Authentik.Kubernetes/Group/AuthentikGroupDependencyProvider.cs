@@ -33,16 +33,11 @@ public class AuthentikGroupDependencyProvider(
         var idPProvider = await providerDependencyProvider.ResolveAsync(provider, cancellationToken);
         logger.LogDebug("Resolved provider {ProviderNamespace}/{ProviderName} for group", entity.Spec.ProviderRef.Namespace, entity.Spec.ProviderRef.Name);
 
-        var settings = new AuthentikGroupProviderSettings
-        {
-            Attributes = new AuthentikGroupAttributeSettings(new Dictionary<string, string>(entity.Spec.Attributes))
-        };
-
         return new AuthentikGroupModel(
             entity.Namespace(),
             entity.Name(),
             idPProvider,
-            new AuthentikGroupSpec(entity.Spec.DisplayName, entity.Spec.MemberOf, entity.Spec.AutoDelete, settings),
+            new AuthentikGroupSpec(entity.Spec.DisplayName, entity.Spec.MemberOf, entity.Spec.Roles, entity.Spec.AutoDelete),
             new AuthentikGroupStatus(entity.Status.GroupId, entity.Status.DisplayName, entity.Status.MemberOfGroupIds));
     }
 }

@@ -11,9 +11,9 @@ public class AuthentikGroup : CustomKubernetesEntity<AuthentikGroup.GroupSpec, A
     {
         public string DisplayName { get; set; } = string.Empty;
         public IEnumerable<string> MemberOf { get; set; } = [];
+        public IEnumerable<string> Roles { get; set; } = [];
         public ProviderRef ProviderRef { get; set; } = new();
         public bool AutoDelete { get; set; } = true;
-        public IDictionary<string, string> Attributes { get; set; } = new Dictionary<string, string>();
     }
 
     public class GroupStatus
@@ -21,6 +21,7 @@ public class AuthentikGroup : CustomKubernetesEntity<AuthentikGroup.GroupSpec, A
         public string GroupId { get; set; } = string.Empty;
         public string DisplayName { get; set; } = string.Empty;
         public IEnumerable<string> MemberOfGroupIds { get; set; } = [];
+        public IEnumerable<string> RoleIds { get; set; } = [];
         public long? ObservedGeneration { get; set; } = 0;
         public IList<V1Condition> Conditions { get; set; } = new List<V1Condition>();
     }

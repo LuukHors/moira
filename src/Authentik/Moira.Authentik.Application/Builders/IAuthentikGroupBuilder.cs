@@ -1,8 +1,6 @@
-using Moira.Authentik.Application.Models;
 using Moira.Authentik.Application.Models.Group;
 using Moira.Authentik.Domain.Groups;
 using Moira.Common.Abstractions.Commands;
-using Moira.Common.Abstractions.Models;
 
 namespace Moira.Authentik.Application.Builders;
 
