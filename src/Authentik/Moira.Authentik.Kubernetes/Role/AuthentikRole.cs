@@ -11,6 +11,8 @@ public class AuthentikRole : CustomKubernetesEntity<AuthentikRole.RoleSpec, Auth
     {
         public string DisplayName { get; set; } = string.Empty;
         
+        public IList<string> Permissions { get; set; } = [];
+        
         public ProviderRef ProviderRef { get; set; } = new();
     }
 

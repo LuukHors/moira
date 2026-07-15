@@ -20,7 +20,8 @@ public static class DependencyInjectionExtensions
         services.AddScoped<IAuthentikProviderCheckService, AuthentikProviderCheckService>();
         services.AddScoped<IAuthentikVersionService, AuthentikVersionService>();
         services.AddScoped(typeof(IAuthentikRepository<,,>), typeof(AuthentikHttpService<,,>));
-
+        services.AddScoped<IAuthentikPermissionService, AuthentikPermissionService>();
+        
         services.AddScoped<IAuthentikRoute<AuthentikGroupV3, AuthentikGroupV3, string>, GroupRouteV3>();
         services.AddScoped<IAuthentikRoute<AuthentikApplicationV3, AuthentikApplicationV3, string>, ApplicationRouteV3>();
         services.AddScoped<IAuthentikRoute<AuthentikOAuth2ProviderV3, AuthentikOAuth2ProviderV3, int>, OAuth2ProviderRouteV3>();

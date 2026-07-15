@@ -5,5 +5,8 @@ metadata:
   namespace: default
 spec:
   displayName: moira-role-1
+  permissions:
+    - authentik_core.delete_group
+    - authentik_core.view_group
   providerRef:
     name: authentik-provider

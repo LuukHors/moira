@@ -1,3 +1,3 @@
 namespace Moira.Authentik.Application.Models.Role;
 
-public record AuthentikRoleSpec(string DisplayName);
+public record AuthentikRoleSpec(string DisplayName, IList<string> Permissions);

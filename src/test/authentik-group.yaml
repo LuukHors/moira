@@ -4,6 +4,10 @@ metadata:
   name: moira-test1
   namespace: default
 spec:
+  roles:
+  - moira-role-1
+  memberOf:
+  - moira-group-10
   displayName: moira-group-1
   providerRef:
     name: authentik-provider

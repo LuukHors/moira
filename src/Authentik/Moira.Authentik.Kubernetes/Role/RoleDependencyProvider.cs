@@ -36,7 +36,8 @@ public class RoleDependencyProvider(
             entity.Name(),
             idPProvider,
             new AuthentikRoleSpec(
-                entity.Spec.DisplayName
+                entity.Spec.DisplayName,
+                entity.Spec.Permissions
             ),
             new AuthentikRoleStatus(
                 entity.Status.RoleId
