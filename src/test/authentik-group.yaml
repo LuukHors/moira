@@ -1,21 +1,25 @@
 apiVersion: moira.operator/v1alpha1
 kind: AuthentikGroup
 metadata:
-  name: moira-test2
+  name: moira-test1
   namespace: default
 spec:
-  displayName: moira-test2
-  memberOf: []
+  roles:
+  - moira-role-1
+  memberOf:
+  - moira-group-10
+  displayName: moira-group-1
   providerRef:
     name: authentik-provider
 ---
 apiVersion: moira.operator/v1alpha1
 kind: AuthentikGroup
 metadata:
-  name: moira-test1
+  name: moira-test2
   namespace: default
 spec:
-  displayName: moira-test1
+  displayName: moira-group-2
+  memberOf: []
   providerRef:
     name: authentik-provider
 ---
@@ -25,7 +29,83 @@ metadata:
   name: moira-test3
   namespace: default
 spec:
-  displayName: moira-test3
+  displayName: moira-group-3
+  providerRef:
+    name: authentik-provider
+---
+apiVersion: moira.operator/v1alpha1
+kind: AuthentikGroup
+metadata:
+  name: moira-test4
+  namespace: default
+spec:
+  displayName: moira-group-4
+  autoDelete: true
+  providerRef:
+    name: authentik-provider
+---
+apiVersion: moira.operator/v1alpha1
+kind: AuthentikGroup
+metadata:
+  name: moira-test5
+  namespace: default
+spec:
+  displayName: moira-group-5
+  autoDelete: true
+  providerRef:
+    name: authentik-provider
+---
+apiVersion: moira.operator/v1alpha1
+kind: AuthentikGroup
+metadata:
+  name: moira-test6
+  namespace: default
+spec:
+  displayName: moira-group-6
+  autoDelete: true
+  providerRef:
+    name: authentik-provider
+---
+apiVersion: moira.operator/v1alpha1
+kind: AuthentikGroup
+metadata:
+  name: moira-test7
+  namespace: default
+spec:
+  displayName: moira-group-7
+  autoDelete: true
+  providerRef:
+    name: authentik-provider
+---
+apiVersion: moira.operator/v1alpha1
+kind: AuthentikGroup
+metadata:
+  name: moira-test8
+  namespace: default
+spec:
+  displayName: moira-group-8
+  autoDelete: true
+  providerRef:
+    name: authentik-provider
+---
+apiVersion: moira.operator/v1alpha1
+kind: AuthentikGroup
+metadata:
+  name: moira-test9
+  namespace: default
+spec:
+  displayName: moira-group-9
+  autoDelete: true
+  providerRef:
+    name: authentik-provider
+---
+apiVersion: moira.operator/v1alpha1
+kind: AuthentikGroup
+metadata:
+  name: moira-test10
+  namespace: default
+spec:
+  displayName: moira-group-10
   autoDelete: true
   providerRef:
     name: authentik-provider

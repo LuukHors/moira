@@ -26,6 +26,8 @@ Log.Logger = new LoggerConfiguration()
 
 var operatorBuilder = builder.Services.AddKubernetesOperator(s =>
 {
+    s.AutoAttachFinalizers = false;
+    s.AutoDetachFinalizers = true;
     s.WithParallelReconciliation(p =>
     {
         p.ConflictStrategy = ParallelReconciliationConflictStrategy.RequeueAfterDelay;

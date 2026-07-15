@@ -1,0 +1,12 @@
+apiVersion: moira.operator/v1alpha1
+kind: AuthentikRole
+metadata:
+  name: moira-role
+  namespace: default
+spec:
+  displayName: moira-role-1
+  permissions:
+    - authentik_core.delete_group
+    - authentik_core.view_group
+  providerRef:
+    name: authentik-provider

@@ -1,17 +1,17 @@
-using Moira.Authentik.Application.Models;
 using Microsoft.Extensions.Logging;
 using Moira.Authentik.Application.Mappers;
+using Moira.Authentik.Application.Models.Group;
 using Moira.Authentik.Application.Ports;
 using Moira.Authentik.Domain.Groups;
-using Moira.Authentik.Domain.ProviderSettings;
+using Moira.Authentik.Domain.Roles;
 using Moira.Common.Abstractions.Commands;
 using Moira.Common.Abstractions.Exceptions;
-using Moira.Common.Abstractions.Models;
 
 namespace Moira.Authentik.Application.Builders;
 
 public class AuthentikGroupBuilder(
     IAuthentikRepository<AuthentikGroupV3, AuthentikGroupV3, string> groupRepository,
+    IAuthentikRepository<AuthentikRoleV3, AuthentikRoleV3, string> roleRepository,
     ILogger<AuthentikGroupBuilder> logger) : IAuthentikGroupBuilder
 {
     private static readonly IReadOnlyDictionary<string, object> DefaultAttributes =
@@ -20,34 +20,66 @@ public class AuthentikGroupBuilder(
     public async Task<AuthentikGroupV3> BuildAsync(IdPCommand<AuthentikGroupModel> command, CancellationToken cancellationToken)
     {
         var parentIds = await ResolveParentIdsAsync(command, cancellationToken);
-        var attributes = MergeAttributes(command.Entity.Spec.Authentik);
-        return command.Entity.ToAuthentikGroup(parentIds, attributes);
+        var roleIds = await ResolveRoleIdsAsync(command, cancellationToken);
+        return command.Entity.ToAuthentikGroup(parentIds, roleIds, DefaultAttributes);
     }
-
-    private static IReadOnlyDictionary<string, object> MergeAttributes(AuthentikGroupProviderSettings settings)
-    {
-        return DefaultAttributes
-            .Concat(settings.Attributes.Values.Select(kv => new KeyValuePair<string, object>(kv.Key, kv.Value)))
-            .ToDictionary(kv => kv.Key, kv => kv.Value);
-    }
-
+    
     private async Task<IEnumerable<string>> ResolveParentIdsAsync(IdPCommand<AuthentikGroupModel> command, CancellationToken cancellationToken)
     {
         var memberOfNames = command.Entity.Spec.MemberOf
-            .Where(memberOf => !string.IsNullOrEmpty(memberOf))
+            .Where(memberOf => !string.IsNullOrWhiteSpace(memberOf))
             .Distinct()
             .ToList();
 
-        logger.LogDebug("Resolving {ParentGroupCount} parent groups", memberOfNames.Count);
+        var page = await groupRepository.ListAsync(
+            name: null,
+            attributes: null,
+            command.Entity.IdPProvider,
+            id: null,
+            cancellationToken);
 
-        var parentTasks = memberOfNames.Select(async memberOf =>
+        var groupsByName = page.Results.ToDictionary(g => g.name);
+
+        var missingGroup = memberOfNames
+            .FirstOrDefault(memberOfName => !groupsByName.ContainsKey(memberOfName));
+
+        if (missingGroup is not null)
         {
-            var parent = await groupRepository.GetByNameAsync(memberOf, command.Entity.IdPProvider, null, cancellationToken)
-                ?? throw new IdPException($"Could not find parent group '{memberOf}'", IdPExceptionReason.IdpValidationFailed);
+            throw new IdPException(
+                $"Could not find group '{missingGroup}'",
+                IdPExceptionReason.IdpValidationFailed);
+        }
 
-            return parent.pk!;
-        });
+        return memberOfNames
+            .Select(name => groupsByName[name].pk!);
+    }
+    
+    private async Task<IEnumerable<string>> ResolveRoleIdsAsync(IdPCommand<AuthentikGroupModel> command, CancellationToken cancellationToken)
+    {
+        var roleNames = command.Entity.Spec.Roles
+            .Where(role => !string.IsNullOrEmpty(role))
+            .Distinct()
+            .ToList();
 
-        return await Task.WhenAll(parentTasks);
+        var page = await roleRepository.ListAsync(name: null,
+            attributes: null,
+            command.Entity.IdPProvider,
+            id: null,
+            cancellationToken);
+
+        var rolesByName = page.Results.ToDictionary(g => g.name);
+
+        var missingRole = roleNames
+            .FirstOrDefault(roleName => !rolesByName.ContainsKey(roleName));
+
+        if (missingRole is not null)
+        {
+            throw new IdPException(
+                $"Could not find group '{missingRole}'",
+                IdPExceptionReason.IdpValidationFailed);
+        }
+
+        return roleNames
+            .Select(name => rolesByName[name].pk!);
     }
 }

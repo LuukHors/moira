@@ -23,6 +23,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="PreReconcileSteps\" />
+      <Folder Include="Role\" />
     </ItemGroup>
 </Project>

@@ -1,10 +1,11 @@
 using System.Text.RegularExpressions;
 using Moira.Authentik.Application.Models;
+using Moira.Authentik.Application.Models.OidcApplication;
 using Moira.Authentik.Domain.Applications;
 
 namespace Moira.Authentik.Application.Builders;
 
-public partial class AuthentikApplicationBuilder : IAuthentikApplicationBuilder
+public class AuthentikApplicationBuilder : IAuthentikApplicationBuilder
 {
     public AuthentikApplicationV3 Build(AuthentikOidcApplicationModel application, int? providerId, string? applicationPk)
     {
@@ -36,10 +37,7 @@ public partial class AuthentikApplicationBuilder : IAuthentikApplicationBuilder
 
     private static string Slug(string value)
     {
-        var slug = SlugRegex().Replace(value.ToLowerInvariant(), "-").Trim('-');
+        var slug = new Regex("[^a-z0-9]+").Replace(value.ToLowerInvariant(), "-").Trim('-');
         return string.IsNullOrWhiteSpace(slug) ? "oidc-application" : slug;
     }
-
-    [GeneratedRegex("[^a-z0-9]+")]
-    private static partial Regex SlugRegex();
 }

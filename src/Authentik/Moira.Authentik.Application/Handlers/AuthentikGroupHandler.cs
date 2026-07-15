@@ -1,11 +1,10 @@
-using Moira.Authentik.Application.Models;
 using Microsoft.Extensions.Logging;
 using Moira.Authentik.Application.Builders;
+using Moira.Authentik.Application.Models.Group;
 using Moira.Authentik.Application.Ports;
 using Moira.Authentik.Domain.Groups;
 using Moira.Common.Abstractions;
 using Moira.Common.Abstractions.Commands;
-using Moira.Common.Abstractions.Models;
 
 namespace Moira.Authentik.Application.Handlers;
 

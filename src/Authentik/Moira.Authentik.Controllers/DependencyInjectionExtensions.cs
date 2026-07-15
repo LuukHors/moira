@@ -1,6 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
 using Moira.Authentik.Application;
 using Moira.Authentik.Application.Models;
+using Moira.Authentik.Application.Models.Group;
+using Moira.Authentik.Application.Models.OidcApplication;
+using Moira.Authentik.Application.Models.Role;
 using Moira.Authentik.Controllers.Adapters;
 using Moira.Authentik.Infrastructure;
 using Moira.Common.Abstractions;
@@ -19,7 +22,8 @@ public static class DependencyInjectionExtensions
         services.AddScoped<IProviderAdapter<AuthentikGroupModel>, AuthentikGroupProviderAdapter>();
         services.AddScoped<IProviderAdapter<AuthentikOidcApplicationModel>, AuthentikApplicationProviderAdapter>();
         services.AddScoped<IProviderAdapter<IdPProvider>, AuthentikProviderAdapter>();
-
+        services.AddScoped<IProviderAdapter<AuthentikRoleModel>, AuthentikRoleProviderAdapter>();
+        
         return services;
     }
 }

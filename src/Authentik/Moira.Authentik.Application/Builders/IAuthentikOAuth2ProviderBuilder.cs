@@ -1,4 +1,5 @@
 using Moira.Authentik.Application.Models;
+using Moira.Authentik.Application.Models.OidcApplication;
 using Moira.Authentik.Domain.Applications;
 using Moira.Common.Abstractions.Models;
 

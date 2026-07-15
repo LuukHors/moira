@@ -1,4 +1,4 @@
-namespace Moira.Authentik.Application.Models;
+namespace Moira.Authentik.Application.Models.OidcApplication;
 
 public record AuthentikOidcApplicationStatus(
     string ApplicationId = "",
